@@ -1,0 +1,5 @@
+@import '_variables';
+
+@function color($key: 'primary', $shade: 'main') {
+  @return map-get(map-get($colors, $key), $shade);
+}

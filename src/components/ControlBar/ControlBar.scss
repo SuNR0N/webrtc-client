@@ -1,0 +1,19 @@
+@import '../../styles/_functions';
+
+.control-bar {
+  &__button {
+    transition: all 0.2s ease-in-out;
+
+    &:hover {
+      transform: scale(1.1);
+    }
+
+    &--on#{&} {
+      color: color(success);
+    }
+
+    &--off#{&} {
+      color: color(error);
+    }
+  }
+}

@@ -1,0 +1,29 @@
+@import '../../styles/_functions.scss';
+
+.input-group {
+  &__button {
+    &--primary#{&} {
+      color: color(primary);
+    }
+
+    &--secondary#{&} {
+      color: color(secondary);
+    }
+
+    &--error#{&} {
+      color: color(error);
+    }
+
+    &--success#{&} {
+      color: color(success);
+    }
+
+    &--warning#{&} {
+      color: color(warning);
+    }
+
+    &--info#{&} {
+      color: color(info);
+    }
+  }
+}

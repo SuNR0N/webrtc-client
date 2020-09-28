@@ -1,0 +1,13 @@
+@import '../../styles/_functions';
+
+.settings-panel {
+  &__status {
+    &--online {
+      color: color(success);
+    }
+
+    &--offline {
+      color: color(error);
+    }
+  }
+}
