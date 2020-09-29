@@ -13,17 +13,30 @@ import {
   WebRTCContextAction,
   WebRTCContextActionType,
 } from '../actions/webrtc-context-action';
+import {
+  answerMessage,
+  byeMessage,
+  Candidate,
+  candidateMessage,
+  CandidatePair,
+  offerMessage,
+  SendSignalingMessage,
+  SignalingMessage,
+} from '../models';
 
 export interface State {
   audioMuted: boolean;
   avStream?: MediaStream;
   iceServers?: RTCIceServer[];
+  latestCandidatePair?: CandidatePair;
+  latestStatsReport?: RTCStatsReport;
   localStream?: MediaStream;
   peerId?: string;
   peers: Map<string, RTCPeerConnection>;
+  queryStatsInterval: number;
   remoteStream?: MediaStream;
   screenShare?: MediaStream;
-  signalingSocket?: WebSocket;
+  sendSignalingMessage: SendSignalingMessage;
   videoMuted: boolean;
 }
 
@@ -31,32 +44,30 @@ export const initialState: State = {
   audioMuted: false,
   avStream: undefined,
   iceServers: undefined,
+  latestCandidatePair: undefined,
+  latestStatsReport: undefined,
   localStream: undefined,
   peerId: undefined,
   peers: new Map(),
+  queryStatsInterval: 2000,
   remoteStream: undefined,
   screenShare: undefined,
-  signalingSocket: undefined,
+  sendSignalingMessage: () => {},
   videoMuted: false,
 };
 
 const createPeerConnection = (
   id: string,
+  state: State,
   dispatch: Dispatch<WebRTCContextAction>,
-  iceServers?: RTCIceServer[],
-  signalingSocket?: WebSocket
+  sendSignalingMessage: SendSignalingMessage,
+  iceServers?: RTCIceServer[]
 ): RTCPeerConnection => {
   const pc = new RTCPeerConnection({ iceServers });
   pc.addEventListener('icecandidate', ({ candidate }) => {
-    signalingSocket?.send(
-      JSON.stringify({
-        type: 'candidate',
-        payload: {
-          id,
-          candidate,
-        },
-      })
-    );
+    if (candidate) {
+      sendSignalingMessage(candidateMessage({ id, candidate }));
+    }
   });
   pc.addEventListener('track', ({ streams }) => {
     dispatch({ type: WebRTCContextActionType.UpdateRemoteStream, payload: streams[0] });
@@ -64,17 +75,33 @@ const createPeerConnection = (
   pc.addEventListener('iceconnectionstatechange', () => {
     console.log(id, 'iceconnectionstatechange', pc.iceConnectionState);
   });
-  pc.addEventListener('connectionstatechange', () => {
+  pc.addEventListener('connectionstatechange', async () => {
     console.log(id, 'connectionstatechange', pc.connectionState);
+    if (pc.connectionState === 'connected') {
+      const statsReport = await pc.getStats();
+      dispatch({ type: WebRTCContextActionType.UpdateStatsReport, payload: statsReport });
+    }
   });
   pc.addEventListener('signalingstatechange', () => {
     console.log(id, 'signalingstatechange', pc.signalingState);
   });
 
+  const intervalId = setInterval(async () => {
+    if (pc.signalingState === 'closed') {
+      clearInterval(intervalId);
+      return;
+    }
+    const sender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+    const statsReport = await sender?.getStats();
+    if (statsReport) {
+      dispatch({ type: WebRTCContextActionType.UpdateStatsReport, payload: statsReport });
+    }
+  }, state.queryStatsInterval);
+
   return pc;
 };
 
-const hangUp = (id: string, peers: Map<string, RTCPeerConnection>, signalingSocket?: WebSocket) => {
+const hangUp = (id: string, peers: Map<string, RTCPeerConnection>, sendMessage: (message: SignalingMessage) => void) => {
   const peer = peers.get(id);
   if (!peer) {
     console.log(`Peer with id '${id}' does not exist`);
@@ -85,14 +112,7 @@ const hangUp = (id: string, peers: Map<string, RTCPeerConnection>, signalingSock
   peers.delete(id);
 
   // Tell the other side
-  signalingSocket?.send(
-    JSON.stringify({
-      type: 'bye',
-      payload: {
-        id,
-      },
-    })
-  );
+  sendMessage(byeMessage({ id }));
 };
 
 const replaceVideoTrack = (peers: Map<string, RTCPeerConnection>, withTrack?: MediaStreamTrack) => {
@@ -104,6 +124,77 @@ const replaceVideoTrack = (peers: Map<string, RTCPeerConnection>, withTrack?: Me
       }
     });
   }
+};
+
+const calculateBitrateStats = (statsReport: RTCStatsReport, latestStatsReport?: RTCStatsReport): void => {
+  statsReport.forEach((report) => {
+    if (report.type === 'outbound-rtp') {
+      if (report.isRemote) {
+        return;
+      }
+      const now = report.timestamp;
+      const bytes = report.bytesSent;
+      const headerBytes = report.headerBytesSent;
+
+      const packets = report.packetsSent;
+      if (latestStatsReport && latestStatsReport.has(report.id)) {
+        // calculate bitrate
+        const bitrate = Math.floor(
+          (8 * (bytes - latestStatsReport.get(report.id).bytesSent)) / (now - latestStatsReport.get(report.id).timestamp)
+        );
+        const headerRate = Math.floor(
+          (8 * (headerBytes - latestStatsReport.get(report.id).headerBytesSent)) / (now - latestStatsReport.get(report.id).timestamp)
+        );
+
+        const packetRate = Math.floor(
+          (1000 * (packets - latestStatsReport.get(report.id).packetsSent)) / (now - latestStatsReport.get(report.id).timestamp)
+        );
+        console.log(`Bitrate ${bitrate}kbps, overhead ${headerRate}kbps, ${packetRate} packets/second`);
+      }
+    }
+  });
+};
+
+const getCandidatePair = (statsReport: RTCStatsReport, latestCandidatePair?: CandidatePair): CandidatePair | undefined => {
+  if (latestCandidatePair) {
+    return;
+  }
+
+  // Figure out the peer's ip
+  let activeCandidatePair: RTCIceCandidatePairStats | undefined;
+  let remoteCandidate: Candidate | undefined;
+  let localCandidate: Candidate | undefined;
+
+  // Search for the candidate pair, spec-way first.
+  statsReport.forEach((report) => {
+    if (report.type === 'transport') {
+      activeCandidatePair = statsReport.get(report.selectedCandidatePairId);
+    }
+  });
+  // Fallback for Firefox.
+  if (!activeCandidatePair) {
+    statsReport.forEach((report) => {
+      if (report.type === 'candidate-pair' && report.selected) {
+        activeCandidatePair = report;
+      }
+    });
+  }
+
+  const { localCandidateId, remoteCandidateId } = activeCandidatePair || {};
+  remoteCandidate = Candidate.fromJSON(remoteCandidateId && statsReport.get(remoteCandidateId));
+  localCandidate = Candidate.fromJSON(localCandidateId && statsReport.get(localCandidateId));
+
+  if (remoteCandidate) {
+    console.log('Remote is', remoteCandidate.address, remoteCandidate.port);
+  }
+  if (localCandidate) {
+    console.log('Local is', localCandidate.address, localCandidate.port);
+  }
+
+  return {
+    local: localCandidate,
+    remote: remoteCandidate,
+  };
 };
 
 interface AsyncActionHandler<A> {
@@ -152,12 +243,13 @@ const handleInitAVStreamSuccess = (state: State, stream: MediaStream): State => 
 const handleInitiatePeerConnection: ReducerMiddleware<InitiatePeerConnectionAction> = ({ dispatch, getState }) => async ({
   payload: id,
 }) => {
-  const { iceServers, localStream, peers, signalingSocket } = getState();
+  const state = getState();
+  const { iceServers, localStream, peers, sendSignalingMessage } = state;
   if (peers.has(id)) {
     console.log(`You are already in a call with: ${id}`);
     return;
   }
-  const pc = createPeerConnection(id, dispatch, iceServers, signalingSocket);
+  const pc = createPeerConnection(id, state, dispatch, sendSignalingMessage, iceServers);
   peers.set(id, pc);
   dispatch({ type: WebRTCContextActionType.UpdatePeerId, payload: id });
   if (localStream) {
@@ -165,15 +257,7 @@ const handleInitiatePeerConnection: ReducerMiddleware<InitiatePeerConnectionActi
   }
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
-  signalingSocket?.send(
-    JSON.stringify({
-      type: 'offer',
-      payload: {
-        id,
-        sdp: offer.sdp,
-      },
-    })
-  );
+  sendSignalingMessage(offerMessage({ id, sdp: offer.sdp! }));
 };
 
 const handleClosePeerConnection = (state: State, id: string): State => {
@@ -191,10 +275,10 @@ const handleClosePeerConnection = (state: State, id: string): State => {
 };
 
 const handleHangUp = (state: State): State => {
-  const { peers, peerId, signalingSocket } = state;
+  const { peers, peerId, sendSignalingMessage } = state;
   if (peerId) {
     peers.forEach((_peer, id) => {
-      hangUp(id, peers, signalingSocket);
+      hangUp(id, peers, sendSignalingMessage);
     });
   }
 
@@ -235,21 +319,17 @@ const handleMuteVideo = (state: State): State => {
 };
 
 const handleOfferReceived: ReducerMiddleware<OfferReceivedAction> = ({ dispatch, getState }) => async ({ payload: { id, sdp } }) => {
-  const { iceServers, localStream, peers, signalingSocket } = getState();
+  const state = getState();
+  const { iceServers, localStream, peers, sendSignalingMessage } = state;
   if (!peers.has(id)) {
     console.log(`Incoming call from: ${id}`);
     if (peers.size >= 1) {
       // Already in a call. Reject.
       console.log('Already in a call, rejecting');
-      signalingSocket?.send(
-        JSON.stringify({
-          type: 'bye',
-          payload: id,
-        })
-      );
+      sendSignalingMessage(byeMessage({ id }));
       return;
     }
-    const pc = createPeerConnection(id, dispatch, iceServers, signalingSocket);
+    const pc = createPeerConnection(id, state, dispatch, sendSignalingMessage, iceServers);
     peers.set(id, pc);
     dispatch({ type: WebRTCContextActionType.UpdatePeerId, payload: id });
     if (localStream) {
@@ -258,15 +338,7 @@ const handleOfferReceived: ReducerMiddleware<OfferReceivedAction> = ({ dispatch,
     await pc.setRemoteDescription({ type: 'offer', sdp });
     const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
-    signalingSocket?.send(
-      JSON.stringify({
-        type: 'answer',
-        payload: {
-          id,
-          sdp: answer.sdp,
-        },
-      })
-    );
+    sendSignalingMessage(answerMessage({ id, sdp: answer.sdp! }));
   } else {
     console.log('Subsequent offer not implemented');
   }
@@ -357,10 +429,24 @@ const handleUpdateRemoteStream = (state: State, stream: MediaStream): State => (
   remoteStream: stream,
 });
 
-const handleUpdateSignalingSocket = (state: State, signalingSocket: WebSocket): State => ({
+const handleUpdateSendSignalingMessage = (state: State, sendSignalingMessage: SendSignalingMessage): State => ({
   ...state,
-  signalingSocket,
+  sendSignalingMessage,
 });
+
+const handleUpdateStatsReport = (state: State, statsReport: RTCStatsReport): State => {
+  const { latestCandidatePair, latestStatsReport } = state;
+  calculateBitrateStats(statsReport, latestStatsReport);
+  const candidatePair = getCandidatePair(statsReport, latestCandidatePair);
+
+  return {
+    ...state,
+    latestStatsReport: statsReport,
+    ...(candidatePair && {
+      latestCandidatePair: candidatePair,
+    }),
+  };
+};
 
 export const asyncActionHandlers: AsyncActionHandlers<Reducer<State, WebRTCContextAction>, AsyncWebRTCContextAction> = {
   AddICECandidate: handleAddICECandidate,
@@ -400,8 +486,10 @@ export const reducer = (state: State, action: WebRTCContextAction): State => {
       return handleUpdatePeerId(state, action.payload);
     case WebRTCContextActionType.UpdateRemoteStream:
       return handleUpdateRemoteStream(state, action.payload);
-    case WebRTCContextActionType.UpdateSignalingSocket:
-      return handleUpdateSignalingSocket(state, action.payload);
+    case WebRTCContextActionType.UpdateSendSignalingMessage:
+      return handleUpdateSendSignalingMessage(state, action.payload);
+    case WebRTCContextActionType.UpdateStatsReport:
+      return handleUpdateStatsReport(state, action.payload);
     default:
       return state;
   }

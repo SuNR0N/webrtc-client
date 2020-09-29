@@ -29,6 +29,11 @@ export const Video: FC<Props> = ({ autoPlay = true, className, id, flipHorizonta
     setFlippedHorizontal(!flippedHorizontal);
   };
 
+  // Called when the first frame is rendered
+  const handleLoadedMetadata = () => {
+    console.log('Metadata loaded');
+  };
+
   return (
     <Grid container className={cn('video', className)}>
       {id && (
@@ -45,6 +50,7 @@ export const Video: FC<Props> = ({ autoPlay = true, className, id, flipHorizonta
           autoPlay={autoPlay}
           muted={muted}
           playsInline={playsInline}
+          onLoadedMetadata={handleLoadedMetadata}
         />
         <VideoOptions className="video__options" onFlip={handleFlip} />
       </Grid>

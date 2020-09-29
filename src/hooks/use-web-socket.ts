@@ -15,7 +15,7 @@ export const useWebSocket = (uri?: string) => {
 
   const handleOpen = useCallback(() => {
     dispatchSignalingAction({ type: SignalingContextActionType.Connected });
-    dispatchWebRTCAction({ type: WebRTCContextActionType.UpdateSignalingSocket, payload: socketRef.current! });
+    dispatchWebRTCAction({ type: WebRTCContextActionType.UpdateSendSignalingMessage, payload: sendMessage });
     console.log(`WebSocket connection has been opened with '${uri}'`);
   }, [dispatchSignalingAction, dispatchWebRTCAction, uri]);
 
@@ -26,6 +26,10 @@ export const useWebSocket = (uri?: string) => {
     },
     [dispatchSignalingAction]
   );
+
+  const sendMessage = (message: SignalingMessage): void => {
+    socketRef.current?.send(JSON.stringify(message));
+  };
 
   const handleMessage = useCallback(
     (event: MessageEvent) => {

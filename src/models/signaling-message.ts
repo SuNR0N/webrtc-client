@@ -9,15 +9,27 @@ export enum SignalingMessageType {
   Offer = 'offer',
 }
 
-interface AnswerMessage extends MessageWithPayload<{ id: string; sdp: string }> {
+interface SignalingMessagePayload {
+  id: string;
+}
+
+interface SDPPayload extends SignalingMessagePayload {
+  sdp: string;
+}
+
+interface AnswerMessage extends MessageWithPayload<SDPPayload> {
   type: typeof SignalingMessageType.Answer;
 }
 
-interface ByeMessage extends MessageWithPayload<{ id: string }> {
+interface ByeMessage extends MessageWithPayload<SignalingMessagePayload> {
   type: typeof SignalingMessageType.Bye;
 }
 
-interface CandidateMessage extends MessageWithPayload<{ candidate: RTCIceCandidate; id: string }> {
+interface CandidateMessagePayload extends SignalingMessagePayload {
+  candidate: RTCIceCandidate;
+}
+
+interface CandidateMessage extends MessageWithPayload<CandidateMessagePayload> {
   type: typeof SignalingMessageType.Candidate;
 }
 
@@ -29,8 +41,32 @@ interface ICEServersMessage extends MessageWithPayload<RTCIceServer[]> {
   type: typeof SignalingMessageType.IceServers;
 }
 
-interface OfferMessage extends MessageWithPayload<{ id: string; sdp: string }> {
+interface OfferMessage extends MessageWithPayload<SDPPayload> {
   type: typeof SignalingMessageType.Offer;
 }
 
 export type SignalingMessage = AnswerMessage | ByeMessage | CandidateMessage | HelloMessage | ICEServersMessage | OfferMessage;
+
+export const answerMessage = (payload: SDPPayload): AnswerMessage => ({
+  type: SignalingMessageType.Answer,
+  payload,
+});
+
+export const byeMessage = (payload: SignalingMessagePayload): ByeMessage => ({
+  type: SignalingMessageType.Bye,
+  payload,
+});
+
+export const candidateMessage = (payload: CandidateMessagePayload): CandidateMessage => ({
+  type: SignalingMessageType.Candidate,
+  payload,
+});
+
+export const offerMessage = (payload: SDPPayload): OfferMessage => ({
+  type: SignalingMessageType.Offer,
+  payload,
+});
+
+export interface SendSignalingMessage {
+  (message: SignalingMessage): void;
+}

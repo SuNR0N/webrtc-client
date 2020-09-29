@@ -1,4 +1,4 @@
-import { Action, ActionWithPayload } from '../models/action';
+import { Action, ActionWithPayload, SendSignalingMessage } from '../models';
 
 export enum WebRTCContextActionType {
   AddICECandidate = 'AddICECandidate',
@@ -21,7 +21,8 @@ export enum WebRTCContextActionType {
   UpdateLocalStream = 'UpdateLocalStream',
   UpdatePeerId = 'UpdatePeerId',
   UpdateRemoteStream = 'UpdateRemoteStream',
-  UpdateSignalingSocket = 'UpdateSignalingSocket',
+  UpdateSendSignalingMessage = 'UpdateSendSignalingMessage',
+  UpdateStatsReport = 'UpdateStatsReport',
 }
 
 export interface AddICECandidateAction extends ActionWithPayload<{ candidate: RTCIceCandidate; id: string }> {
@@ -104,8 +105,12 @@ interface UpdateRemoteStreamAction extends ActionWithPayload<MediaStream> {
   type: typeof WebRTCContextActionType.UpdateRemoteStream;
 }
 
-interface UpdateSignalingSocketAction extends ActionWithPayload<WebSocket> {
-  type: typeof WebRTCContextActionType.UpdateSignalingSocket;
+interface UpdateSendSignalingMessageAction extends ActionWithPayload<SendSignalingMessage> {
+  type: typeof WebRTCContextActionType.UpdateSendSignalingMessage;
+}
+
+interface UpdateStatsReportAction extends ActionWithPayload<RTCStatsReport> {
+  type: typeof WebRTCContextActionType.UpdateStatsReport;
 }
 
 export type AsyncWebRTCContextAction =
@@ -131,4 +136,5 @@ export type WebRTCContextAction =
   | UpdateLocalStreamAction
   | UpdatePeerIdAction
   | UpdateRemoteStreamAction
-  | UpdateSignalingSocketAction;
+  | UpdateSendSignalingMessageAction
+  | UpdateStatsReportAction;
