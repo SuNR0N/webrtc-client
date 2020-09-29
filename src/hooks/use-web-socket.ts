@@ -42,7 +42,7 @@ export const useWebSocket = (uri?: string) => {
             dispatchWebRTCAction({ type: WebRTCContextActionType.AddICECandidate, payload: message.payload });
             break;
           case SignalingMessageType.Hello:
-            dispatchSignalingAction({ type: SignalingContextActionType.UpdateClient, payload: message.payload });
+            dispatchSignalingAction({ type: SignalingContextActionType.UpdateClientId, payload: message.payload });
             break;
           case SignalingMessageType.IceServers:
             dispatchWebRTCAction({ type: WebRTCContextActionType.UpdateICEServers, payload: message.payload });

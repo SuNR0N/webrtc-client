@@ -5,7 +5,7 @@ export enum SignalingContextActionType {
   Connected = 'Connected',
   Disconnect = 'Disconnect',
   Disconnected = 'Disconnected',
-  UpdateClient = 'UpdateClient',
+  UpdateClientId = 'UpdateClientId',
 }
 
 interface ConnectAction extends ActionWithPayload<string> {
@@ -24,8 +24,8 @@ interface DisconnectedAction extends Action {
   type: typeof SignalingContextActionType.Disconnected;
 }
 
-interface UpdateClientAction extends ActionWithPayload<string> {
-  type: typeof SignalingContextActionType.UpdateClient;
+interface UpdateClientIdAction extends ActionWithPayload<string> {
+  type: typeof SignalingContextActionType.UpdateClientId;
 }
 
-export type SignalingContextAction = ConnectAction | ConnectedAction | DisconnectAction | DisconnectedAction | UpdateClientAction;
+export type SignalingContextAction = ConnectAction | ConnectedAction | DisconnectAction | DisconnectedAction | UpdateClientIdAction;

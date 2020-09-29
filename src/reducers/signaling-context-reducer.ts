@@ -41,10 +41,11 @@ export const reducer = (state: State, action: SignalingContextAction): State => 
     case SignalingContextActionType.Disconnected:
       return {
         ...state,
+        clientId: undefined,
         connectionState: ConnectionState.Disconnected,
         signalingServerUri: undefined,
       };
-    case SignalingContextActionType.UpdateClient:
+    case SignalingContextActionType.UpdateClientId:
       return {
         ...state,
         clientId: action.payload,

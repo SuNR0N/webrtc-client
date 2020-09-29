@@ -51,7 +51,7 @@ export const App: FC = () => {
       </Grid>
       <Grid container item xs={6} alignItems="center">
         {remoteStream ? (
-          <Video id={peerId} stream={remoteStream} />
+          <Video id={peerId} stream={remoteStream} flipHorizontal={true} />
         ) : (
           <InputGroup
             buttonColor="success"

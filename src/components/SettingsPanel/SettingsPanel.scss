@@ -1,13 +1,21 @@
 @import '../../styles/_functions';
 
 .settings-panel {
-  &__status {
-    &--online {
-      color: color(success);
+  &__summary {
+    &-title {
+      svg {
+        margin-right: 0.5rem;
+      }
     }
 
-    &--offline {
-      color: color(error);
+    &-status {
+      &--online {
+        color: color(success);
+      }
+
+      &--offline {
+        color: color(error);
+      }
     }
   }
 }

@@ -1,6 +1,6 @@
 import React, { FC } from 'react';
 import cn from 'classnames';
-import { Grid, IconButton, Tooltip } from '@material-ui/core';
+import { Fab, Grid, Tooltip } from '@material-ui/core';
 import { CallEnd, Mic, MicOff, ScreenShare, StopScreenShare, Videocam, VideocamOff } from '@material-ui/icons';
 
 import { useWebRTCContext } from '../../contexts';
@@ -34,10 +34,10 @@ export const ControlBar: FC<Props> = ({ className }) => {
   };
 
   return (
-    <Grid container justify="center" className={cn('control-bar', className)} spacing={1}>
+    <Grid container justify="center" className={cn('control-bar', className)} spacing={2}>
       <Grid item>
         <Tooltip title={`Turn ${audioMuted ? 'on' : 'off'} microphone`}>
-          <IconButton
+          <Fab
             onClick={handleToggleMuteAudio}
             className={cn('control-bar__button', {
               'control-bar__button--on': !audioMuted,
@@ -45,12 +45,12 @@ export const ControlBar: FC<Props> = ({ className }) => {
             })}
           >
             {audioMuted ? <MicOff /> : <Mic />}
-          </IconButton>
+          </Fab>
         </Tooltip>
       </Grid>
       <Grid item>
         <Tooltip title={`Turn ${videoMuted ? 'on' : 'off'} camera`}>
-          <IconButton
+          <Fab
             onClick={handleToggleMuteVideo}
             className={cn('control-bar__button', {
               'control-bar__button--on': !videoMuted,
@@ -58,12 +58,12 @@ export const ControlBar: FC<Props> = ({ className }) => {
             })}
           >
             {videoMuted ? <VideocamOff /> : <Videocam />}
-          </IconButton>
+          </Fab>
         </Tooltip>
       </Grid>
       <Grid item>
         <Tooltip title={screenShare ? 'Stop sharing your screen' : 'Share your screen'}>
-          <IconButton
+          <Fab
             onClick={handleToggleScreenShare}
             className={cn('control-bar__button', {
               'control-bar__button--on': screenShare,
@@ -71,15 +71,15 @@ export const ControlBar: FC<Props> = ({ className }) => {
             })}
           >
             {screenShare ? <ScreenShare /> : <StopScreenShare />}
-          </IconButton>
+          </Fab>
         </Tooltip>
       </Grid>
       {peerId && (
         <Grid item>
           <Tooltip title="Leave the meeting">
-            <IconButton onClick={handleHangUp} className={cn('control-bar__button', 'control-bar__button--off')}>
+            <Fab onClick={handleHangUp} className={cn('control-bar__button', 'control-bar__button--off')}>
               <CallEnd />
-            </IconButton>
+            </Fab>
           </Tooltip>
         </Grid>
       )}

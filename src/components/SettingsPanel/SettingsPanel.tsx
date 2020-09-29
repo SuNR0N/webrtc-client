@@ -1,16 +1,18 @@
-import React, { ChangeEvent, FC, useState } from 'react';
+import React, { ChangeEvent, FC, useEffect, useState } from 'react';
 import cn from 'classnames';
 import {
   Accordion,
-  AccordionSummary,
   AccordionDetails,
-  Grid,
-  FormControl,
-  InputLabel,
-  InputAdornment,
+  AccordionSummary,
   Button,
-  Tooltip,
+  FormControl,
+  FormControlLabel,
+  Grid,
+  InputAdornment,
+  InputLabel,
   OutlinedInput,
+  Switch,
+  Tooltip,
 } from '@material-ui/core';
 import { ExpandMore, OfflineBolt, Settings } from '@material-ui/icons';
 
@@ -19,12 +21,14 @@ import { SignalingContextActionType } from '../../actions/signaling-context-acti
 import { useWebSocket } from '../../hooks';
 import { ConnectionState } from '../../reducers/signaling-context-reducer';
 import './SettingsPanel.scss';
+import { disableLogging, enableLogging } from '../../utils/logging-utils';
 
 interface Props {
   className?: string;
 }
 
 interface FormFields {
+  debug: boolean;
   signalingServerUri: string;
 }
 
@@ -35,8 +39,10 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
   } = useSignalingContext();
   useWebSocket(signalingServerUri);
   const [fieldValues, setFieldValues] = useState<FormFields>({
+    debug: true,
     signalingServerUri: '',
   });
+  const { debug } = fieldValues;
 
   const handleConnect = () => {
     dispatch({ type: SignalingContextActionType.Connect, payload: fieldValues.signalingServerUri });
@@ -56,19 +62,33 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
     }
   };
 
+  const handleSwitch = (event: ChangeEvent<HTMLInputElement>) => {
+    const { target } = event;
+    if (target) {
+      setFieldValues((previousState) => ({
+        ...previousState,
+        [target.name]: target.checked,
+      }));
+    }
+  };
+
+  useEffect(() => {
+    debug ? enableLogging() : disableLogging();
+  }, [debug]);
+
   return (
     <Accordion className={cn('settings-panel', className)}>
-      <AccordionSummary expandIcon={<ExpandMore />}>
+      <AccordionSummary className="settings-panel__summary" expandIcon={<ExpandMore />}>
         <Grid container direction="row" justify="space-between" alignItems="center">
-          <Grid container item xs={6}>
+          <Grid className="settings-panel__summary-title" container item xs={6}>
             <Settings /> Settings
           </Grid>
           <Grid container item xs={6} justify="flex-end">
             <Tooltip title={connectionState === ConnectionState.Connected ? 'Online' : 'Offline'}>
               <OfflineBolt
                 className={cn({
-                  'settings-panel__status--online': connectionState === ConnectionState.Connected,
-                  'settings-panel__status--offline': connectionState !== ConnectionState.Connected,
+                  'settings-panel__summary-status--online': connectionState === ConnectionState.Connected,
+                  'settings-panel__summary-status--offline': connectionState !== ConnectionState.Connected,
                 })}
               />
             </Tooltip>
@@ -101,6 +121,9 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
                 }
               />
             </FormControl>
+          </Grid>
+          <Grid container item xs={6}>
+            <FormControlLabel control={<Switch color="primary" checked={debug} onChange={handleSwitch} name="debug" />} label="Debug" />
           </Grid>
         </Grid>
       </AccordionDetails>

@@ -4,16 +4,28 @@
   &__button {
     transition: all 0.2s ease-in-out;
 
+    &.MuiFab-root {
+      color: color('gray', light);
+    }
+
     &:hover {
       transform: scale(1.1);
     }
 
     &--on#{&} {
-      color: color(success);
+      background-color: color(success);
+
+      &:hover {
+        background-color: color(success);
+      }
     }
 
     &--off#{&} {
-      color: color(error);
+      background-color: color(error);
+
+      &:hover {
+        background-color: color(error);
+      }
     }
   }
 }

@@ -1,5 +1,28 @@
 .video {
+  $self: &;
+
+  &__wrapper {
+    position: relative;
+
+    &:hover {
+      #{$self}__options.MuiSpeedDial-root {
+        display: flex;
+      }
+    }
+  }
+
   &__frame {
     width: 100%;
+
+    &--flipped-horizontal {
+      transform: scaleX(-1);
+    }
+  }
+
+  &__options.MuiSpeedDial-root {
+    display: none;
+    position: absolute;
+    right: 1rem;
+    bottom: 1rem;
   }
 }
