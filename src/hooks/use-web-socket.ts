@@ -3,8 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { WebRTCContextActionType } from '../actions/webrtc-context-action';
 import { SignalingContextActionType } from '../actions/signaling-context-action';
 import { useWebRTCContext, useSignalingContext } from '../contexts';
-import { SignalingMessage, SignalingMessageType } from '../models/signaling-message';
-import { ConnectionState } from '../reducers/signaling-context-reducer';
+import { ConnectionState, SignalingMessage, SignalingMessageType } from '../models';
 
 export const useWebSocket = (uri?: string) => {
   const { dispatch: dispatchSignalingAction, state } = useSignalingContext();

@@ -1,25 +1,13 @@
 import { SignalingContextActionType, SignalingContextAction } from '../actions/signaling-context-action';
+import { ConnectionState, SignalingContextState } from '../models';
 
-export enum ConnectionState {
-  Connecting,
-  Connected,
-  Disconnecting,
-  Disconnected,
-}
-
-export interface State {
-  clientId?: string;
-  connectionState: ConnectionState;
-  signalingServerUri?: string;
-}
-
-export const initialState: State = {
+export const initialState: SignalingContextState = {
   clientId: undefined,
   connectionState: ConnectionState.Disconnected,
   signalingServerUri: undefined,
 };
 
-export const reducer = (state: State, action: SignalingContextAction): State => {
+export const reducer = (state: SignalingContextState, action: SignalingContextAction): SignalingContextState => {
   switch (action.type) {
     case SignalingContextActionType.Connect:
       return {

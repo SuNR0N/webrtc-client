@@ -1,10 +1,11 @@
 import React, { createContext, Dispatch, FC, useContext, useReducer } from 'react';
-import { SignalingContextAction } from '../../actions/signaling-context-action';
 
-import { initialState, reducer, State } from '../../reducers/signaling-context-reducer';
+import { SignalingContextAction } from '../../actions/signaling-context-action';
+import { SignalingContextState } from '../../models';
+import { initialState, reducer } from '../../reducers/signaling-context-reducer';
 
 interface SignalingContextType {
-  state: State;
+  state: SignalingContextState;
   dispatch: Dispatch<SignalingContextAction>;
 }
 

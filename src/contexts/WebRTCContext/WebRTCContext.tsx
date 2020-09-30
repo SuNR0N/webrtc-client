@@ -2,10 +2,11 @@ import React, { createContext, Dispatch, FC, useContext } from 'react';
 import { useReducerAsync } from 'use-reducer-async';
 
 import { AsyncWebRTCContextAction, WebRTCContextAction } from '../../actions/webrtc-context-action';
-import { asyncActionHandlers, initialState, reducer, State } from '../../reducers/webrtc-context-reducer';
+import { WebRTCContextState } from '../../models';
+import { asyncActionHandlers, initialState, reducer } from '../../reducers/webrtc-context-reducer';
 
 interface WebRTCContextType {
-  state: State;
+  state: WebRTCContextState;
   dispatch: Dispatch<WebRTCContextAction | AsyncWebRTCContextAction>;
 }
 

@@ -5,7 +5,7 @@ import { ControlBar, SettingsPanel, Video } from '../';
 import { useWebRTCContext, useSignalingContext } from '../../contexts';
 import { WebRTCContextActionType } from '../../actions/webrtc-context-action';
 import { InputGroup } from '../InputGroup/InputGroup';
-import { ConnectionState } from '../../reducers/signaling-context-reducer';
+import { ConnectionState } from '../../models';
 
 interface FormFields {
   peerId: string;

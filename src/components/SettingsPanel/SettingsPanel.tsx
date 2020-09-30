@@ -19,9 +19,9 @@ import { ExpandMore, OfflineBolt, Settings } from '@material-ui/icons';
 import { useSignalingContext } from '../../contexts';
 import { SignalingContextActionType } from '../../actions/signaling-context-action';
 import { useWebSocket } from '../../hooks';
-import { ConnectionState } from '../../reducers/signaling-context-reducer';
-import './SettingsPanel.scss';
 import { disableLogging, enableLogging } from '../../utils/logging-utils';
+import { ConnectionState } from '../../models';
+import './SettingsPanel.scss';
 
 interface Props {
   className?: string;
