@@ -34,12 +34,24 @@ export const Video: FC<Props> = ({ autoPlay = true, className, id, flipHorizonta
     console.log('Metadata loaded');
   };
 
+  const handleCopy = () => {
+    if (id) {
+      navigator.clipboard.writeText(id);
+    }
+  };
+
   return (
     <Grid container className={cn('video', className)}>
       {id && (
         <Grid container item xs={12} justify="center">
           <Box mb={1}>
-            <Chip avatar={<Avatar>ID</Avatar>} label={id} color="primary" variant="outlined" />
+            <Chip
+              onClick={navigator.clipboard.writeText && handleCopy}
+              avatar={<Avatar>ID</Avatar>}
+              label={id}
+              color="primary"
+              variant="outlined"
+            />
           </Box>
         </Grid>
       )}

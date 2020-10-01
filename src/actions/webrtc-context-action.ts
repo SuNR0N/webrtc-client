@@ -28,14 +28,20 @@ export enum WebRTCContextActionType {
   UpdateStatsReport = 'UpdateStatsReport',
 }
 
-interface SDPPayload {
+interface IdPayload {
   id: string;
+}
+
+interface SDPPayload extends IdPayload {
   sdp: string;
 }
 
-interface ICECandidatePayload {
+interface ICECandidatePayload extends IdPayload {
   candidate: RTCIceCandidate;
-  id: string;
+}
+
+export interface ClosePeerConnectionPayload extends IdPayload {
+  error?: string;
 }
 
 export interface AddICECandidateAction extends ActionWithPayload<ICECandidatePayload> {
@@ -58,7 +64,7 @@ export interface InitiatePeerConnectionAction extends ActionWithPayload<string> 
   type: typeof WebRTCContextActionType.InitiatePeerConnection;
 }
 
-interface ClosePeerConnectionAction extends ActionWithPayload<string> {
+interface ClosePeerConnectionAction extends ActionWithPayload<ClosePeerConnectionPayload> {
   type: typeof WebRTCContextActionType.ClosePeerConnection;
 }
 

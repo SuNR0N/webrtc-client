@@ -5,6 +5,7 @@ import {
   AddICECandidateAction,
   AnswerReceivedAction,
   AsyncWebRTCContextAction,
+  ClosePeerConnectionPayload,
   InitAVStreamAction,
   InitiatePeerConnectionAction,
   OfferReceivedAction,
@@ -107,9 +108,13 @@ const handleInitiatePeerConnection: ReducerMiddleware<InitiatePeerConnectionActi
   sendSignalingMessage(offerMessage({ id, sdp: offer.sdp! }));
 };
 
-const handleClosePeerConnection = (state: WebRTCContextState, id: string): WebRTCContextState => {
+const handleClosePeerConnection = (state: WebRTCContextState, { id, error }: ClosePeerConnectionPayload): WebRTCContextState => {
   const { peers } = state;
   const peer = peers.get(id);
+
+  if (error) {
+    console.log(`Peer connection closed. Reason: ${error}`);
+  }
 
   if (!peer) {
     console.log(`Peer not found with id: ${id}`);
@@ -118,7 +123,11 @@ const handleClosePeerConnection = (state: WebRTCContextState, id: string): WebRT
     peers.delete(id);
   }
 
-  return state;
+  return {
+    ...state,
+    peerId: undefined,
+    remoteStream: undefined,
+  };
 };
 
 const handleHangUp = (state: WebRTCContextState): WebRTCContextState => {

@@ -52,7 +52,7 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
   } = useSignalingContext();
   const {
     dispatch: dispatchWebRTCAction,
-    state: { maximumBitrateChangeInProgress },
+    state: { iceServers, maximumBitrateChangeInProgress },
   } = useWebRTCContext();
   useWebSocket(signalingServerUri);
   const [fieldValues, setFieldValues] = useState<FormFields>({
@@ -120,8 +120,8 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
             <Tooltip title={connectionState === ConnectionState.Connected ? 'Online' : 'Offline'}>
               <OfflineBolt
                 className={cn({
-                  'settings-panel__summary-status--online': connectionState === ConnectionState.Connected,
-                  'settings-panel__summary-status--offline': connectionState !== ConnectionState.Connected,
+                  'settings-panel__summary-status--online': iceServers?.length,
+                  'settings-panel__summary-status--offline': !iceServers,
                 })}
               />
             </Tooltip>
@@ -146,7 +146,11 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
                         Disconnect
                       </Button>
                     ) : (
-                      <Button color="primary" onClick={handleConnect} disabled={connectionState !== ConnectionState.Disconnected}>
+                      <Button
+                        color="primary"
+                        onClick={handleConnect}
+                        disabled={fieldValues.signalingServerUri.trim().length === 0 || connectionState !== ConnectionState.Disconnected}
+                      >
                         Connect
                       </Button>
                     )}

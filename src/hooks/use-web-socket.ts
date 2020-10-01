@@ -39,16 +39,16 @@ export const useWebSocket = (uri?: string) => {
             dispatchWebRTCAction({ type: WebRTCContextActionType.AnswerReceived, payload: message.payload });
             break;
           case SignalingMessageType.Bye:
-            dispatchWebRTCAction({ type: WebRTCContextActionType.ClosePeerConnection, payload: message.payload.id });
+            dispatchWebRTCAction({ type: WebRTCContextActionType.ClosePeerConnection, payload: message.payload });
             break;
           case SignalingMessageType.Candidate:
             dispatchWebRTCAction({ type: WebRTCContextActionType.AddICECandidate, payload: message.payload });
             break;
           case SignalingMessageType.Hello:
-            dispatchSignalingAction({ type: SignalingContextActionType.UpdateClientId, payload: message.payload });
+            dispatchSignalingAction({ type: SignalingContextActionType.UpdateClientId, payload: message.payload.id });
             break;
           case SignalingMessageType.IceServers:
-            dispatchWebRTCAction({ type: WebRTCContextActionType.UpdateICEServers, payload: message.payload });
+            dispatchWebRTCAction({ type: WebRTCContextActionType.UpdateICEServers, payload: message.payload.iceServers });
             break;
           case SignalingMessageType.Offer:
             dispatchWebRTCAction({ type: WebRTCContextActionType.OfferReceived, payload: message.payload });
@@ -76,12 +76,17 @@ export const useWebSocket = (uri?: string) => {
 
   useEffect(() => {
     if (uri) {
-      const ws = new WebSocket(uri);
-      ws.addEventListener('close', handleClose);
-      ws.addEventListener('error', handleError);
-      ws.addEventListener('message', handleMessage);
-      ws.addEventListener('open', handleOpen);
-      socketRef.current = ws;
+      try {
+        const ws = new WebSocket(uri);
+        ws.addEventListener('close', handleClose);
+        ws.addEventListener('error', handleError);
+        ws.addEventListener('message', handleMessage);
+        ws.addEventListener('open', handleOpen);
+        socketRef.current = ws;
+      } catch (err) {
+        console.log(`Could not create WebSocket using URI: ${uri}`);
+        dispatchSignalingAction({ type: SignalingContextActionType.Disconnected });
+      }
     }
     return () => {
       socketRef.current?.close();
