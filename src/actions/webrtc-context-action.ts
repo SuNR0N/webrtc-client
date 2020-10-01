@@ -19,17 +19,30 @@ export enum WebRTCContextActionType {
   UnmuteVideo = 'UnmuteVideo',
   UpdateICEServers = 'UpdateICEServers',
   UpdateLocalStream = 'UpdateLocalStream',
+  UpdateMaximumBitrate = 'UpdateMaximumBitrate',
+  UpdateMaximumBitrateStarted = 'UpdateMaximumBitrateStarted',
+  UpdateMaximumBitrateSuccess = 'UpdateMaximumBitrateSuccess',
   UpdatePeerId = 'UpdatePeerId',
   UpdateRemoteStream = 'UpdateRemoteStream',
   UpdateSendSignalingMessage = 'UpdateSendSignalingMessage',
   UpdateStatsReport = 'UpdateStatsReport',
 }
 
-export interface AddICECandidateAction extends ActionWithPayload<{ candidate: RTCIceCandidate; id: string }> {
+interface SDPPayload {
+  id: string;
+  sdp: string;
+}
+
+interface ICECandidatePayload {
+  candidate: RTCIceCandidate;
+  id: string;
+}
+
+export interface AddICECandidateAction extends ActionWithPayload<ICECandidatePayload> {
   type: typeof WebRTCContextActionType.AddICECandidate;
 }
 
-export interface AnswerReceivedAction extends ActionWithPayload<{ id: string; sdp: string }> {
+export interface AnswerReceivedAction extends ActionWithPayload<SDPPayload> {
   type: typeof WebRTCContextActionType.AnswerReceived;
 }
 
@@ -61,7 +74,7 @@ interface MuteVideoAction extends Action {
   type: typeof WebRTCContextActionType.MuteVideo;
 }
 
-export interface OfferReceivedAction extends ActionWithPayload<{ id: string; sdp: string }> {
+export interface OfferReceivedAction extends ActionWithPayload<SDPPayload> {
   type: typeof WebRTCContextActionType.OfferReceived;
 }
 
@@ -97,6 +110,18 @@ interface UpdateLocalStreamAction extends ActionWithPayload<MediaStream> {
   type: typeof WebRTCContextActionType.UpdateLocalStream;
 }
 
+export interface UpdateMaximumBitrateAction extends ActionWithPayload<number> {
+  type: typeof WebRTCContextActionType.UpdateMaximumBitrate;
+}
+
+interface UpdateMaximumBitrateStartedAction extends Action {
+  type: typeof WebRTCContextActionType.UpdateMaximumBitrateStarted;
+}
+
+interface UpdateMaximumBitrateSuccessAction extends ActionWithPayload<number> {
+  type: typeof WebRTCContextActionType.UpdateMaximumBitrateSuccess;
+}
+
 interface UpdatePeerIdAction extends ActionWithPayload<string> {
   type: typeof WebRTCContextActionType.UpdatePeerId;
 }
@@ -120,7 +145,8 @@ export type AsyncWebRTCContextAction =
   | InitiatePeerConnectionAction
   | OfferReceivedAction
   | StartScreenShareAction
-  | StopScreenShareAction;
+  | StopScreenShareAction
+  | UpdateMaximumBitrateAction;
 
 export type WebRTCContextAction =
   | ClosePeerConnectionAction
@@ -134,6 +160,8 @@ export type WebRTCContextAction =
   | UnmuteVideoAction
   | UpdateICEServersAction
   | UpdateLocalStreamAction
+  | UpdateMaximumBitrateStartedAction
+  | UpdateMaximumBitrateSuccessAction
   | UpdatePeerIdAction
   | UpdateRemoteStreamAction
   | UpdateSendSignalingMessageAction

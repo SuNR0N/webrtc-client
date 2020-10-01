@@ -1,4 +1,5 @@
 import { Dispatch } from 'react';
+import adapter from 'webrtc-adapter';
 
 import { WebRTCContextAction, WebRTCContextActionType } from '../actions/webrtc-context-action';
 import { byeMessage, Candidate, candidateMessage, CandidatePair, SendSignalingMessage, WebRTCContextState } from '../models';
@@ -142,4 +143,22 @@ export const getCandidatePair = (statsReport: RTCStatsReport, latestCandidatePai
     local: localCandidate,
     remote: remoteCandidate,
   };
+};
+
+export const updateBandwidthRestriction = (sdp: string, value: number): string => {
+  let modifier = 'AS';
+  if (adapter.browserDetails.browser === 'firefox') {
+    value = (value >>> 0) * 1000;
+    modifier = 'TIAS';
+  }
+  if (sdp.indexOf(`b=${modifier}:`) === -1) {
+    // insert b= after c= line.
+    const cRegExp = /c=IN (.*)\r\n/;
+    sdp = sdp.replace(cRegExp, `c=IN $1\r\nb=${modifier}:${value}\r\n`);
+  } else {
+    const modifierRegExp = new RegExp(`b=${modifier}:.*\r\n`);
+    sdp = sdp.replace(modifierRegExp, `b=${modifier}:${value}\r\n`);
+  }
+  console.log(`Applying bandwidth restriction to SDP:\n${sdp}`);
+  return sdp;
 };

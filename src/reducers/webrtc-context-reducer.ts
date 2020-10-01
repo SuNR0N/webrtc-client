@@ -10,11 +10,19 @@ import {
   OfferReceivedAction,
   StartScreenShareAction,
   StopScreenShareAction,
+  UpdateMaximumBitrateAction,
   WebRTCContextAction,
   WebRTCContextActionType,
 } from '../actions/webrtc-context-action';
 import { answerMessage, byeMessage, offerMessage, SendSignalingMessage, WebRTCContextState } from '../models';
-import { calculateBitrateStats, createPeerConnection, getCandidatePair, hangUp, replaceVideoTrack } from '../utils/webrtc-utils';
+import {
+  calculateBitrateStats,
+  createPeerConnection,
+  getCandidatePair,
+  hangUp,
+  replaceVideoTrack,
+  updateBandwidthRestriction,
+} from '../utils/webrtc-utils';
 
 export const initialState: WebRTCContextState = {
   audioMuted: false,
@@ -23,6 +31,8 @@ export const initialState: WebRTCContextState = {
   latestCandidatePair: undefined,
   latestStatsReport: undefined,
   localStream: undefined,
+  maximumBitrate: 0,
+  maximumBitrateChangeInProgress: false,
   peerId: undefined,
   peers: new Map(),
   queryStatsInterval: 2000,
@@ -52,15 +62,17 @@ const handleAddICECandidate: ReducerMiddleware<AddICECandidateAction> = ({ getSt
 };
 
 const handleAnswerReceived: ReducerMiddleware<AnswerReceivedAction> = ({ getState }) => async ({ payload: { id, sdp } }) => {
-  const { peers } = getState();
+  const { maximumBitrate, peers } = getState();
   const peer = peers.get(id);
   if (!peer) {
     console.log(`Peer not found with id: ${id}`);
   } else {
-    await peer.setRemoteDescription({
+    const remoteDescription: RTCSessionDescriptionInit = {
       type: 'answer',
-      sdp,
-    });
+      // TODO: Investigate why this does not work as expected
+      sdp: maximumBitrate ? updateBandwidthRestriction(sdp, maximumBitrate) : sdp,
+    };
+    await peer.setRemoteDescription(remoteDescription);
   }
 };
 
@@ -254,6 +266,51 @@ const handleUpdateLocalStream = (state: WebRTCContextState, stream: MediaStream)
   localStream: stream,
 });
 
+const handleUpdateMaximumBitrate: ReducerMiddleware<UpdateMaximumBitrateAction> = ({ dispatch, getState }) => async ({
+  payload: value,
+}) => {
+  const { peers } = getState();
+  if (window.RTCRtpSender && window.RTCRtpSender.prototype.setParameters) {
+    peers.forEach(async (peer) => {
+      const sender = peer.getSenders().find((s) => s.track?.kind === 'video');
+      if (!sender) {
+        return;
+      }
+      const parameters = sender.getParameters();
+      // Firefox workaround
+      if (!parameters.encodings) {
+        parameters.encodings = [{}];
+      }
+      if (value === 0) {
+        delete parameters.encodings[0].maxBitrate;
+      } else {
+        parameters.encodings[0].maxBitrate = value * 1000;
+      }
+
+      dispatch({ type: WebRTCContextActionType.UpdateMaximumBitrateStarted });
+      try {
+        await sender.setParameters(parameters);
+      } catch (err) {
+        console.log('An error has occurred while trying to update the parameters of RTCRtpSender', err);
+      }
+    });
+  } else {
+    console.log('Dynamic update of RTCRtpSender parameters is not supported');
+  }
+  dispatch({ type: WebRTCContextActionType.UpdateMaximumBitrateSuccess, payload: value });
+};
+
+const handleUpdateMaximumBitrateStarted = (state: WebRTCContextState): WebRTCContextState => ({
+  ...state,
+  maximumBitrateChangeInProgress: true,
+});
+
+const handleUpdateMaximumBitrateSuccess = (state: WebRTCContextState, value: number): WebRTCContextState => ({
+  ...state,
+  maximumBitrateChangeInProgress: false,
+  maximumBitrate: value,
+});
+
 const handleUpdatePeerId = (state: WebRTCContextState, id: string): WebRTCContextState => ({
   ...state,
   peerId: id,
@@ -291,6 +348,7 @@ export const asyncActionHandlers: AsyncActionHandlers<Reducer<WebRTCContextState
   OfferReceived: handleOfferReceived,
   StartScreenShare: handleStartScreenShare,
   StopScreenShare: handleStopScreenShare,
+  UpdateMaximumBitrate: handleUpdateMaximumBitrate,
 };
 
 export const reducer = (state: WebRTCContextState, action: WebRTCContextAction): WebRTCContextState => {
@@ -317,6 +375,10 @@ export const reducer = (state: WebRTCContextState, action: WebRTCContextAction):
       return handleUpdateICEServers(state, action.payload);
     case WebRTCContextActionType.UpdateLocalStream:
       return handleUpdateLocalStream(state, action.payload);
+    case WebRTCContextActionType.UpdateMaximumBitrateStarted:
+      return handleUpdateMaximumBitrateStarted(state);
+    case WebRTCContextActionType.UpdateMaximumBitrateSuccess:
+      return handleUpdateMaximumBitrateSuccess(state, action.payload);
     case WebRTCContextActionType.UpdatePeerId:
       return handleUpdatePeerId(state, action.payload);
     case WebRTCContextActionType.UpdateRemoteStream:

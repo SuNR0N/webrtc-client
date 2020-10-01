@@ -8,6 +8,8 @@ export interface WebRTCContextState {
   latestCandidatePair?: CandidatePair;
   latestStatsReport?: RTCStatsReport;
   localStream?: MediaStream;
+  maximumBitrate: number;
+  maximumBitrateChangeInProgress: boolean;
   peerId?: string;
   peers: Map<string, RTCPeerConnection>;
   queryStatsInterval: number;
