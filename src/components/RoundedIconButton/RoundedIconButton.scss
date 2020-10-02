@@ -1,0 +1,18 @@
+@import '../../styles/_functions';
+
+.rounded-icon-button {
+  @each $name, $color in $colors {
+    &--#{$name}#{&} {
+      color: color('gray', light);
+      background-color: color($name);
+
+      &:hover {
+        background-color: color($name);
+      }
+    }
+  }
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}

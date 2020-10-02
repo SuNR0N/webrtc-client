@@ -2,10 +2,12 @@ import { Dispatch, Reducer } from 'react';
 import { AsyncActionHandlers } from 'use-reducer-async';
 
 import {
+  AcceptOfferAction,
   AddICECandidateAction,
   AnswerReceivedAction,
   AsyncWebRTCContextAction,
   ClosePeerConnectionPayload,
+  DeclineOfferAction,
   InitAVStreamAction,
   InitiatePeerConnectionAction,
   OfferReceivedAction,
@@ -15,7 +17,7 @@ import {
   WebRTCContextAction,
   WebRTCContextActionType,
 } from '../actions/webrtc-context-action';
-import { answerMessage, byeMessage, offerMessage, SendSignalingMessage, WebRTCContextState } from '../models';
+import { answerMessage, byeMessage, Offer, offerMessage, SendSignalingMessage, WebRTCContextState } from '../models';
 import {
   calculateBitrateStats,
   createPeerConnection,
@@ -36,6 +38,7 @@ export const initialState: WebRTCContextState = {
   maximumBitrateChangeInProgress: false,
   peerId: undefined,
   peers: new Map(),
+  pendingOffers: [],
   queryStatsInterval: 2000,
   remoteStream: undefined,
   screenShare: undefined,
@@ -51,6 +54,23 @@ interface ReducerMiddleware<A> {
   ({ dispatch, getState }: { dispatch: Dispatch<WebRTCContextAction>; getState: () => WebRTCContextState }): AsyncActionHandler<A>;
 }
 
+const handleAcceptOffer: ReducerMiddleware<AcceptOfferAction> = ({ dispatch, getState }) => async ({ payload: id }) => {
+  const state = getState();
+  const { iceServers, localStream, peers, pendingOffers, sendSignalingMessage } = state;
+  const offer = pendingOffers.find((o) => o.id === id);
+  const pc = createPeerConnection(id, state, dispatch, sendSignalingMessage, iceServers);
+  peers.set(id, pc);
+  dispatch({ type: WebRTCContextActionType.UpdatePeerId, payload: id });
+  if (localStream) {
+    localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
+  }
+  await pc.setRemoteDescription({ type: 'offer', sdp: offer?.sdp });
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  sendSignalingMessage(answerMessage({ id, sdp: answer.sdp! }));
+  dispatch({ type: WebRTCContextActionType.RemovePendingOffer, payload: id });
+};
+
 const handleAddICECandidate: ReducerMiddleware<AddICECandidateAction> = ({ getState }) => async ({ payload: { candidate, id } }) => {
   const { peers } = getState();
   const peer = peers.get(id);
@@ -61,6 +81,11 @@ const handleAddICECandidate: ReducerMiddleware<AddICECandidateAction> = ({ getSt
     await peer.addIceCandidate(candidate);
   }
 };
+
+const handleAddPendingOffer = (state: WebRTCContextState, offer: Offer): WebRTCContextState => ({
+  ...state,
+  pendingOffers: [...state.pendingOffers, offer],
+});
 
 const handleAnswerReceived: ReducerMiddleware<AnswerReceivedAction> = ({ getState }) => async ({ payload: { id, sdp } }) => {
   const { maximumBitrate, peers } = getState();
@@ -75,6 +100,12 @@ const handleAnswerReceived: ReducerMiddleware<AnswerReceivedAction> = ({ getStat
     };
     await peer.setRemoteDescription(remoteDescription);
   }
+};
+
+const handleDeclineOffer: ReducerMiddleware<DeclineOfferAction> = ({ dispatch, getState }) => async ({ payload: id }) => {
+  const { sendSignalingMessage } = getState();
+  sendSignalingMessage(byeMessage({ id }));
+  dispatch({ type: WebRTCContextActionType.RemovePendingOffer, payload: id });
 };
 
 const handleInitAVStream: ReducerMiddleware<InitAVStreamAction> = ({ dispatch }) => async () => {
@@ -176,7 +207,7 @@ const handleMuteVideo = (state: WebRTCContextState): WebRTCContextState => {
 
 const handleOfferReceived: ReducerMiddleware<OfferReceivedAction> = ({ dispatch, getState }) => async ({ payload: { id, sdp } }) => {
   const state = getState();
-  const { iceServers, localStream, peers, sendSignalingMessage } = state;
+  const { peers, sendSignalingMessage } = state;
   if (!peers.has(id)) {
     console.log(`Incoming call from: ${id}`);
     if (peers.size >= 1) {
@@ -185,19 +216,23 @@ const handleOfferReceived: ReducerMiddleware<OfferReceivedAction> = ({ dispatch,
       sendSignalingMessage(byeMessage({ id }));
       return;
     }
-    const pc = createPeerConnection(id, state, dispatch, sendSignalingMessage, iceServers);
-    peers.set(id, pc);
-    dispatch({ type: WebRTCContextActionType.UpdatePeerId, payload: id });
-    if (localStream) {
-      localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
-    }
-    await pc.setRemoteDescription({ type: 'offer', sdp });
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    sendSignalingMessage(answerMessage({ id, sdp: answer.sdp! }));
+    dispatch({ type: WebRTCContextActionType.AddPendingOffer, payload: { id, sdp } });
   } else {
     console.log('Subsequent offer not implemented');
   }
+};
+
+const handleRemovePendingOffer = (state: WebRTCContextState, id: string): WebRTCContextState => {
+  const { pendingOffers } = state;
+  const indexToRemove = pendingOffers.findIndex((pendingOffer) => pendingOffer.id === id);
+  const updatedPendingOffers = [...pendingOffers.slice(0, indexToRemove), ...pendingOffers.slice(indexToRemove + 1)];
+
+  return {
+    ...state,
+    ...(indexToRemove > -1 && {
+      pendingOffers: updatedPendingOffers,
+    }),
+  };
 };
 
 const handleStartScreenShare: ReducerMiddleware<StartScreenShareAction> = ({ dispatch, getState }) => async () => {
@@ -350,8 +385,10 @@ const handleUpdateStatsReport = (state: WebRTCContextState, statsReport: RTCStat
 };
 
 export const asyncActionHandlers: AsyncActionHandlers<Reducer<WebRTCContextState, WebRTCContextAction>, AsyncWebRTCContextAction> = {
+  AcceptOffer: handleAcceptOffer,
   AddICECandidate: handleAddICECandidate,
   AnswerReceived: handleAnswerReceived,
+  DeclineOffer: handleDeclineOffer,
   InitAVStream: handleInitAVStream,
   InitiatePeerConnection: handleInitiatePeerConnection,
   OfferReceived: handleOfferReceived,
@@ -362,6 +399,8 @@ export const asyncActionHandlers: AsyncActionHandlers<Reducer<WebRTCContextState
 
 export const reducer = (state: WebRTCContextState, action: WebRTCContextAction): WebRTCContextState => {
   switch (action.type) {
+    case WebRTCContextActionType.AddPendingOffer:
+      return handleAddPendingOffer(state, action.payload);
     case WebRTCContextActionType.ClosePeerConnection:
       return handleClosePeerConnection(state, action.payload);
     case WebRTCContextActionType.HangUp:
@@ -372,6 +411,8 @@ export const reducer = (state: WebRTCContextState, action: WebRTCContextAction):
       return handleMuteAudio(state);
     case WebRTCContextActionType.MuteVideo:
       return handleMuteVideo(state);
+    case WebRTCContextActionType.RemovePendingOffer:
+      return handleRemovePendingOffer(state, action.payload);
     case WebRTCContextActionType.StartScreenShareSuccess:
       return handleStartScreenShareSuccess(state, action.payload);
     case WebRTCContextActionType.StopScreenShareSuccess:

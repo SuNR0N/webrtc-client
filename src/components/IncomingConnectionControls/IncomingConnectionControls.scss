@@ -1,0 +1,15 @@
+@import '../../styles/_functions';
+
+.incoming-connection-controls {
+  &__id-badge {
+    margin-bottom: 1rem;
+  }
+
+  &__button-accept.MuiFab-root {
+    background-color: color(success);
+  }
+
+  &__button-decline.MuiFab-root {
+    background-color: color(error);
+  }
+}

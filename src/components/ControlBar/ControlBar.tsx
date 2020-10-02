@@ -1,10 +1,11 @@
 import React, { FC } from 'react';
 import cn from 'classnames';
-import { Fab, Grid, Tooltip } from '@material-ui/core';
+import { Grid } from '@material-ui/core';
 import { CallEnd, Mic, MicOff, ScreenShare, StopScreenShare, Videocam, VideocamOff } from '@material-ui/icons';
 
 import { useWebRTCContext } from '../../contexts';
 import { WebRTCContextActionType } from '../../actions/webrtc-context-action';
+import { RoundedIconButton } from '../RoundedIconButton/RoundedIconButton';
 import './ControlBar.scss';
 
 interface Props {
@@ -36,51 +37,32 @@ export const ControlBar: FC<Props> = ({ className }) => {
   return (
     <Grid container justify="center" className={cn('control-bar', className)} spacing={2}>
       <Grid item>
-        <Tooltip title={`Turn ${audioMuted ? 'on' : 'off'} microphone`}>
-          <Fab
-            onClick={handleToggleMuteAudio}
-            className={cn('control-bar__button', {
-              'control-bar__button--on': !audioMuted,
-              'control-bar__button--off': audioMuted,
-            })}
-          >
-            {audioMuted ? <MicOff /> : <Mic />}
-          </Fab>
-        </Tooltip>
+        <RoundedIconButton
+          icon={audioMuted ? MicOff : Mic}
+          color={!audioMuted ? 'success' : 'error'}
+          tooltip={`Turn ${audioMuted ? 'on' : 'off'} microphone`}
+          onClick={handleToggleMuteAudio}
+        />
       </Grid>
       <Grid item>
-        <Tooltip title={`Turn ${videoMuted ? 'on' : 'off'} camera`}>
-          <Fab
-            onClick={handleToggleMuteVideo}
-            className={cn('control-bar__button', {
-              'control-bar__button--on': !videoMuted,
-              'control-bar__button--off': videoMuted,
-            })}
-          >
-            {videoMuted ? <VideocamOff /> : <Videocam />}
-          </Fab>
-        </Tooltip>
+        <RoundedIconButton
+          icon={videoMuted ? VideocamOff : Videocam}
+          color={!videoMuted ? 'success' : 'error'}
+          tooltip={`Turn ${videoMuted ? 'on' : 'off'} camera`}
+          onClick={handleToggleMuteVideo}
+        />
       </Grid>
       <Grid item>
-        <Tooltip title={screenShare ? 'Stop sharing your screen' : 'Share your screen'}>
-          <Fab
-            onClick={handleToggleScreenShare}
-            className={cn('control-bar__button', {
-              'control-bar__button--on': screenShare,
-              'control-bar__button--off': !screenShare,
-            })}
-          >
-            {screenShare ? <ScreenShare /> : <StopScreenShare />}
-          </Fab>
-        </Tooltip>
+        <RoundedIconButton
+          icon={screenShare ? ScreenShare : StopScreenShare}
+          color={screenShare ? 'success' : 'error'}
+          tooltip={screenShare ? 'Stop sharing your screen' : 'Share your screen'}
+          onClick={handleToggleScreenShare}
+        />
       </Grid>
       {peerId && (
         <Grid item>
-          <Tooltip title="Leave the meeting">
-            <Fab onClick={handleHangUp} className={cn('control-bar__button', 'control-bar__button--off')}>
-              <CallEnd />
-            </Fab>
-          </Tooltip>
+          <RoundedIconButton icon={CallEnd} color="error" tooltip="Leave the meeting" onClick={handleHangUp} />
         </Grid>
       )}
     </Grid>

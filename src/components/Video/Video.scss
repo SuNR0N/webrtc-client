@@ -1,6 +1,10 @@
 .video {
   $self: &;
 
+  &__id-badge.id-badge {
+    margin-bottom: 1rem;
+  }
+
   &__wrapper {
     position: relative;
 

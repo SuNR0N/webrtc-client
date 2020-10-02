@@ -1,4 +1,5 @@
 import { CandidatePair } from './candidate-pair';
+import { Offer } from './offer';
 import { SendSignalingMessage } from './signaling-message';
 
 export interface WebRTCContextState {
@@ -12,6 +13,7 @@ export interface WebRTCContextState {
   maximumBitrateChangeInProgress: boolean;
   peerId?: string;
   peers: Map<string, RTCPeerConnection>;
+  pendingOffers: Offer[];
   queryStatsInterval: number;
   remoteStream?: MediaStream;
   screenShare?: MediaStream;

@@ -1,9 +1,12 @@
-import { Action, ActionWithPayload, SendSignalingMessage } from '../models';
+import { Action, ActionWithPayload, Offer, SendSignalingMessage } from '../models';
 
 export enum WebRTCContextActionType {
+  AcceptOffer = 'AcceptOffer',
   AddICECandidate = 'AddICECandidate',
+  AddPendingOffer = 'AddPendingOffer',
   AnswerReceived = 'AnswerReceived',
   ClosePeerConnection = 'ClosePeerConnection',
+  DeclineOffer = 'DeclineOffer',
   HangUp = 'HangUp',
   InitAVStream = 'InitAVStream',
   InitAVStreamSuccess = 'InitAVStreamSuccess',
@@ -11,6 +14,7 @@ export enum WebRTCContextActionType {
   MuteAudio = 'MuteAudio',
   MuteVideo = 'MuteVideo',
   OfferReceived = 'OfferReceived',
+  RemovePendingOffer = 'RemovePendingOffer',
   StartScreenShare = 'StartScreenShare',
   StartScreenShareSuccess = 'StartScreenShareSuccess',
   StopScreenShare = 'StopScreenShare',
@@ -44,12 +48,24 @@ export interface ClosePeerConnectionPayload extends IdPayload {
   error?: string;
 }
 
+export interface AcceptOfferAction extends ActionWithPayload<string> {
+  type: typeof WebRTCContextActionType.AcceptOffer;
+}
+
 export interface AddICECandidateAction extends ActionWithPayload<ICECandidatePayload> {
   type: typeof WebRTCContextActionType.AddICECandidate;
 }
 
+interface AddPendingOfferAction extends ActionWithPayload<Offer> {
+  type: typeof WebRTCContextActionType.AddPendingOffer;
+}
+
 export interface AnswerReceivedAction extends ActionWithPayload<SDPPayload> {
   type: typeof WebRTCContextActionType.AnswerReceived;
+}
+
+export interface DeclineOfferAction extends ActionWithPayload<string> {
+  type: typeof WebRTCContextActionType.DeclineOffer;
 }
 
 export interface InitAVStreamAction extends Action {
@@ -82,6 +98,10 @@ interface MuteVideoAction extends Action {
 
 export interface OfferReceivedAction extends ActionWithPayload<SDPPayload> {
   type: typeof WebRTCContextActionType.OfferReceived;
+}
+
+interface RemovePendingOfferAction extends ActionWithPayload<string> {
+  type: typeof WebRTCContextActionType.RemovePendingOffer;
 }
 
 export interface StartScreenShareAction extends Action {
@@ -145,8 +165,10 @@ interface UpdateStatsReportAction extends ActionWithPayload<RTCStatsReport> {
 }
 
 export type AsyncWebRTCContextAction =
+  | AcceptOfferAction
   | AddICECandidateAction
   | AnswerReceivedAction
+  | DeclineOfferAction
   | InitAVStreamAction
   | InitiatePeerConnectionAction
   | OfferReceivedAction
@@ -155,11 +177,13 @@ export type AsyncWebRTCContextAction =
   | UpdateMaximumBitrateAction;
 
 export type WebRTCContextAction =
+  | AddPendingOfferAction
   | ClosePeerConnectionAction
   | HangUpAction
   | InitAVStreamSuccessAction
   | MuteAudioAction
   | MuteVideoAction
+  | RemovePendingOfferAction
   | StartScreenShareSuccessAction
   | StopScreenShareSuccessAction
   | UnmuteAudioAction
