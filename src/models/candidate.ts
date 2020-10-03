@@ -8,9 +8,6 @@ interface CustomCandidateProperties {
 
 export class Candidate {
   static fromJSON(data: RTCIceCandidateStats & CustomCandidateProperties) {
-    if (!data) {
-      return;
-    }
     const { address, ip, ipAddress, port, portNumber } = data;
     return new Candidate(address || ip || ipAddress, port || portNumber);
   }
@@ -21,5 +18,9 @@ export class Candidate {
   constructor(address?: string, port?: number) {
     this.address = address;
     this.port = port;
+  }
+
+  toString() {
+    return [this.address, this.port].filter(Boolean).join(' | ');
   }
 }

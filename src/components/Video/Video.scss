@@ -9,7 +9,7 @@
     position: relative;
 
     &:hover {
-      #{$self}__options.MuiSpeedDial-root {
+      #{$self}__actions.video-actions {
         display: flex;
       }
     }
@@ -23,7 +23,7 @@
     }
   }
 
-  &__options.MuiSpeedDial-root {
+  &__actions.video-actions {
     display: none;
     position: absolute;
     right: 1rem;

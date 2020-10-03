@@ -2,8 +2,8 @@ import React, { FC, useEffect, useState } from 'react';
 import cn from 'classnames';
 import { Grid } from '@material-ui/core';
 
-import { VideoOptions } from '../';
-import { IdBadge } from '../IdBadge/IdBadge';
+import { IdBadge, VideoAction, VideoActions, VideoStatistics } from '../';
+import { Statistics, StatsConfig, StatisticConfig } from '../../models';
 import './Video.scss';
 
 interface Props {
@@ -14,11 +14,22 @@ interface Props {
   muted?: boolean;
   playsInline?: boolean;
   stream?: MediaStream;
+  statsConfig?: StatsConfig<Statistics, Partial<StatisticConfig<Statistics>>>;
 }
 
-export const Video: FC<Props> = ({ autoPlay = true, className, id, flipHorizontal = false, muted = false, playsInline = true, stream }) => {
+export const Video: FC<Props> = ({
+  autoPlay = true,
+  className,
+  id,
+  flipHorizontal = false,
+  muted = false,
+  playsInline = true,
+  stream,
+  statsConfig,
+}) => {
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const [flippedHorizontal, setFlippedHorizontal] = useState(flipHorizontal);
+  const [showStatistics, setShowStatistics] = useState(false);
 
   useEffect(() => {
     if (stream && videoElement) {
@@ -26,8 +37,17 @@ export const Video: FC<Props> = ({ autoPlay = true, className, id, flipHorizonta
     }
   }, [stream, videoElement]);
 
-  const handleFlip = () => {
-    setFlippedHorizontal(!flippedHorizontal);
+  const handleAction = (action: VideoAction) => {
+    switch (action) {
+      case VideoAction.Flip:
+        setFlippedHorizontal(!flippedHorizontal);
+        break;
+      case VideoAction.ToggleStatistics:
+        setShowStatistics(!showStatistics);
+        break;
+      default:
+        break;
+    }
   };
 
   // Called when the first frame is rendered
@@ -51,7 +71,8 @@ export const Video: FC<Props> = ({ autoPlay = true, className, id, flipHorizonta
           playsInline={playsInline}
           onLoadedMetadata={handleLoadedMetadata}
         />
-        <VideoOptions className="video__options" onFlip={handleFlip} />
+        {showStatistics && <VideoStatistics config={statsConfig} />}
+        <VideoActions className="video__actions" onAction={handleAction} />
       </Grid>
     </Grid>
   );

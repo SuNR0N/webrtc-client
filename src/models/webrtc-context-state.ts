@@ -1,12 +1,11 @@
-import { CandidatePair } from './candidate-pair';
 import { Offer } from './offer';
 import { SendSignalingMessage } from './signaling-message';
+import { Statistics } from './statistics';
 
 export interface WebRTCContextState {
   audioMuted: boolean;
   avStream?: MediaStream;
   iceServers?: RTCIceServer[];
-  latestCandidatePair?: CandidatePair;
   latestStatsReport?: RTCStatsReport;
   localStream?: MediaStream;
   maximumBitrate: number;
@@ -18,5 +17,6 @@ export interface WebRTCContextState {
   remoteStream?: MediaStream;
   screenShare?: MediaStream;
   sendSignalingMessage: SendSignalingMessage;
+  statistics: Statistics;
   videoMuted: boolean;
 }

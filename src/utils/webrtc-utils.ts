@@ -2,7 +2,7 @@ import { Dispatch } from 'react';
 import adapter from 'webrtc-adapter';
 
 import { WebRTCContextAction, WebRTCContextActionType } from '../actions/webrtc-context-action';
-import { byeMessage, Candidate, candidateMessage, CandidatePair, SendSignalingMessage, WebRTCContextState } from '../models';
+import { byeMessage, Candidate, candidateMessage, RateStatistics, SendSignalingMessage, WebRTCContextState } from '../models';
 
 export const createPeerConnection = (
   id: string,
@@ -74,75 +74,38 @@ export const replaceVideoTrack = (peers: Map<string, RTCPeerConnection>, withTra
   }
 };
 
-export const calculateBitrateStats = (statsReport: RTCStatsReport, latestStatsReport?: RTCStatsReport): void => {
-  statsReport.forEach((report) => {
-    if (report.type === 'outbound-rtp') {
-      if (report.isRemote) {
-        return;
-      }
-      const now = report.timestamp;
-      const bytes = report.bytesSent;
-      const headerBytes = report.headerBytesSent;
-
-      const packets = report.packetsSent;
-      if (latestStatsReport && latestStatsReport.has(report.id)) {
-        // calculate bitrate
-        const bitrate = Math.floor(
-          (8 * (bytes - latestStatsReport.get(report.id).bytesSent)) / (now - latestStatsReport.get(report.id).timestamp)
-        );
-        const headerRate = Math.floor(
-          (8 * (headerBytes - latestStatsReport.get(report.id).headerBytesSent)) / (now - latestStatsReport.get(report.id).timestamp)
-        );
-
-        const packetRate = Math.floor(
-          (1000 * (packets - latestStatsReport.get(report.id).packetsSent)) / (now - latestStatsReport.get(report.id).timestamp)
-        );
-        console.log(`Bitrate ${bitrate}kbps, overhead ${headerRate}kbps, ${packetRate} packets/second`);
-      }
-    }
-  });
+export const calculateBitrateStats = (statsReport: RTCStatsReport, latestStatsReport?: RTCStatsReport): RateStatistics | undefined => {
+  const [, report] = Array.from(statsReport.entries()).find(([, report]) => report.type === 'outbound-rtp' && !report.isRemote) || [];
+  const previousReport = latestStatsReport?.get(report?.id);
+  if (report && previousReport) {
+    const { timestamp, bytesSent, headerBytesSent, packetsSent } = report;
+    const {
+      timestamp: prevTimestamp,
+      bytesSent: prevBytesSent,
+      headerBytesSent: prevHeaderBytesSent,
+      packetsSent: prevPacketsSent,
+    } = previousReport;
+    // calculate bitrate
+    const timeDiff = timestamp - prevTimestamp;
+    const bitrate = Math.floor((8 * (bytesSent - prevBytesSent)) / timeDiff);
+    const headerBitrate = Math.floor((8 * (headerBytesSent - prevHeaderBytesSent)) / timeDiff);
+    const packetRate = Math.floor((1000 * (packetsSent - prevPacketsSent)) / timeDiff);
+    console.log(`Bitrate ${bitrate}kbps, overhead ${headerBitrate}kbps, ${packetRate} packets/second`);
+    return {
+      bitrate,
+      headerBitrate,
+      packetRate,
+    };
+  }
 };
 
-export const getCandidatePair = (statsReport: RTCStatsReport, latestCandidatePair?: CandidatePair): CandidatePair | undefined => {
-  if (latestCandidatePair) {
-    return;
+export const getCandidate = (statsReport: RTCStatsReport, type: 'remote' | 'local'): Candidate | undefined => {
+  const [, report] = Array.from(statsReport.entries()).find(([, report]) => report.type === `${type}-candidate`) || [];
+  if (report) {
+    const candidate = Candidate.fromJSON(report);
+    console.log(`${type.toUpperCase()} is ${candidate.toString()}`);
+    return candidate;
   }
-
-  // Figure out the peer's ip
-  let activeCandidatePair: RTCIceCandidatePairStats | undefined;
-  let remoteCandidate: Candidate | undefined;
-  let localCandidate: Candidate | undefined;
-
-  // Search for the candidate pair, spec-way first.
-  statsReport.forEach((report) => {
-    if (report.type === 'transport') {
-      activeCandidatePair = statsReport.get(report.selectedCandidatePairId);
-    }
-  });
-  // Fallback for Firefox.
-  if (!activeCandidatePair) {
-    statsReport.forEach((report) => {
-      if (report.type === 'candidate-pair' && report.selected) {
-        activeCandidatePair = report;
-      }
-    });
-  }
-
-  const { localCandidateId, remoteCandidateId } = activeCandidatePair || {};
-  remoteCandidate = Candidate.fromJSON(remoteCandidateId && statsReport.get(remoteCandidateId));
-  localCandidate = Candidate.fromJSON(localCandidateId && statsReport.get(localCandidateId));
-
-  if (remoteCandidate) {
-    console.log('Remote is', remoteCandidate.address, remoteCandidate.port);
-  }
-  if (localCandidate) {
-    console.log('Local is', localCandidate.address, localCandidate.port);
-  }
-
-  return {
-    local: localCandidate,
-    remote: remoteCandidate,
-  };
 };
 
 export const updateBandwidthRestriction = (sdp: string, value: number): string => {

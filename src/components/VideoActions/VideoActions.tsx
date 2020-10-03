@@ -1,44 +1,40 @@
 import React, { FC, useState } from 'react';
 import cn from 'classnames';
 import { SpeedDial, SpeedDialAction, SpeedDialIcon } from '@material-ui/lab';
-import { Flip } from '@material-ui/icons';
+import { Assessment, Flip } from '@material-ui/icons';
 
-enum Action {
+export enum VideoAction {
   Flip = 'Flip',
+  ToggleStatistics = 'ToggleStatistics',
 }
 
-const actions = [{ icon: <Flip />, name: 'Flip Horizontal', id: Action.Flip }];
+const actions = [
+  { icon: <Flip />, name: 'Flip Horizontal', id: VideoAction.Flip },
+  { icon: <Assessment />, name: 'Toggle Statistics', id: VideoAction.ToggleStatistics },
+];
 
 interface Props {
   className?: string;
   direction?: 'up' | 'down' | 'left' | 'right';
   hidden?: boolean;
-  onFlip?: () => void;
+  onAction?: (action: VideoAction) => void;
 }
 
-export const VideoOptions: FC<Props> = ({ className, direction = 'up', hidden = false, onFlip }) => {
+export const VideoActions: FC<Props> = ({ className, direction = 'up', hidden = false, onAction }) => {
   const [open, setOpen] = useState(false);
 
   const handleClose = () => setOpen(false);
 
   const handleOpen = () => setOpen(true);
 
-  const handleAction = (action: Action) => () => {
-    switch (action) {
-      case Action.Flip:
-        if (onFlip) {
-          onFlip();
-        }
-        break;
-      default:
-        break;
-    }
+  const handleAction = (action: VideoAction) => () => {
+    onAction && onAction(action);
   };
 
   return (
     <SpeedDial
       ariaLabel="Video Options"
-      className={cn('video-options', className)}
+      className={cn('video-actions', className)}
       icon={<SpeedDialIcon />}
       onClose={handleClose}
       onOpen={handleOpen}

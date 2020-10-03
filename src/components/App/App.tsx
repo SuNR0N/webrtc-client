@@ -56,11 +56,28 @@ export const App: FC = () => {
         <SettingsPanel />
       </Grid>
       <Grid item xs={6}>
-        <Video id={clientId} muted={true} stream={localStream} />
+        <Video
+          id={clientId}
+          muted={true}
+          stream={localStream}
+          statsConfig={{
+            bitrate: { enabled: true },
+            headerBitrate: { enabled: true },
+            packetRate: { enabled: true },
+            localCandidate: { enabled: true },
+          }}
+        />
       </Grid>
       <Grid container item xs={6} alignItems="center">
         {remoteStream ? (
-          <Video id={peerId} stream={remoteStream} flipHorizontal={true} />
+          <Video
+            id={peerId}
+            stream={remoteStream}
+            flipHorizontal={true}
+            statsConfig={{
+              remoteCandidate: { enabled: true },
+            }}
+          />
         ) : pendingOffers.length ? (
           <IncomingConnectionControls id={pendingOffers[0].id} onAccept={handleAccept} onDecline={handleDecline} />
         ) : (

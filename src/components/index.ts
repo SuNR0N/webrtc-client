@@ -6,4 +6,5 @@ export * from './InputGroup/InputGroup';
 export * from './RoundedIconButton/RoundedIconButton';
 export * from './SettingsPanel/SettingsPanel';
 export * from './Video/Video';
-export * from './VideoOptions/VideoOptions';
+export * from './VideoActions/VideoActions';
+export * from './VideoStatistics/VideoStatistics';

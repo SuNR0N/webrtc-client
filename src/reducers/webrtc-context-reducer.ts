@@ -21,7 +21,7 @@ import { answerMessage, byeMessage, Offer, offerMessage, SendSignalingMessage, W
 import {
   calculateBitrateStats,
   createPeerConnection,
-  getCandidatePair,
+  getCandidate,
   hangUp,
   replaceVideoTrack,
   updateBandwidthRestriction,
@@ -31,7 +31,6 @@ export const initialState: WebRTCContextState = {
   audioMuted: false,
   avStream: undefined,
   iceServers: undefined,
-  latestCandidatePair: undefined,
   latestStatsReport: undefined,
   localStream: undefined,
   maximumBitrate: 0,
@@ -43,6 +42,7 @@ export const initialState: WebRTCContextState = {
   remoteStream: undefined,
   screenShare: undefined,
   sendSignalingMessage: () => {},
+  statistics: {},
   videoMuted: false,
 };
 
@@ -158,6 +158,7 @@ const handleClosePeerConnection = (state: WebRTCContextState, { id, error }: Clo
     ...state,
     peerId: undefined,
     remoteStream: undefined,
+    statistics: {},
   };
 };
 
@@ -173,6 +174,7 @@ const handleHangUp = (state: WebRTCContextState): WebRTCContextState => {
     ...state,
     peerId: undefined,
     remoteStream: undefined,
+    statistics: {},
   };
 };
 
@@ -371,16 +373,22 @@ const handleUpdateSendSignalingMessage = (state: WebRTCContextState, sendSignali
 });
 
 const handleUpdateStatsReport = (state: WebRTCContextState, statsReport: RTCStatsReport): WebRTCContextState => {
-  const { latestCandidatePair, latestStatsReport } = state;
-  calculateBitrateStats(statsReport, latestStatsReport);
-  const candidatePair = getCandidatePair(statsReport, latestCandidatePair);
+  const { latestStatsReport, statistics } = state;
+  const rateStatistics = calculateBitrateStats(statsReport, latestStatsReport);
+  const localCandidate = statistics.localCandidate || getCandidate(statsReport, 'local');
+  const remoteCandidate = statistics.remoteCandidate || getCandidate(statsReport, 'remote');
 
   return {
     ...state,
     latestStatsReport: statsReport,
-    ...(candidatePair && {
-      latestCandidatePair: candidatePair,
-    }),
+    statistics: {
+      ...state.statistics,
+      ...(rateStatistics && {
+        ...rateStatistics,
+      }),
+      localCandidate,
+      remoteCandidate,
+    },
   };
 };
 
