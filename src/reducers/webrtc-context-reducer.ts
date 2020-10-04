@@ -19,7 +19,8 @@ import {
 } from '../actions/webrtc-context-action';
 import { answerMessage, byeMessage, Offer, offerMessage, SendSignalingMessage, WebRTCContextState } from '../models';
 import {
-  calculateBitrateStats,
+  calculateInboundStatistics,
+  calculateOutboundStatistics,
   createPeerConnection,
   getCandidate,
   hangUp,
@@ -389,7 +390,8 @@ const handleUpdateSendSignalingMessage = (state: WebRTCContextState, sendSignali
 
 const handleUpdateStatsReport = (state: WebRTCContextState, statsReport: RTCStatsReport): WebRTCContextState => {
   const { latestStatsReport, statistics } = state;
-  const rateStatistics = calculateBitrateStats(statsReport, latestStatsReport);
+  const outboundStatistics = calculateOutboundStatistics(statsReport, latestStatsReport);
+  const inboundStatistics = calculateInboundStatistics(statsReport);
   const localCandidate = statistics.localCandidate || getCandidate(statsReport, 'local');
   const remoteCandidate = statistics.remoteCandidate || getCandidate(statsReport, 'remote');
 
@@ -398,8 +400,11 @@ const handleUpdateStatsReport = (state: WebRTCContextState, statsReport: RTCStat
     latestStatsReport: statsReport,
     statistics: {
       ...state.statistics,
-      ...(rateStatistics && {
-        ...rateStatistics,
+      ...(outboundStatistics && {
+        ...outboundStatistics,
+      }),
+      ...(inboundStatistics && {
+        ...inboundStatistics,
       }),
       localCandidate,
       remoteCandidate,

@@ -13,11 +13,13 @@ interface Props {
 const defaultConfig: Required<StatsConfig<Statistics, StatisticConfig<Statistics>>> = {
   bitrate: { enabled: false, renderer: (value) => `Bitrate: ${value}kbps` },
   headerBitrate: { enabled: false, renderer: (value) => `Overhead: ${value}kbps` },
-  packetRate: { enabled: false, renderer: (value) => `Packet rate: ${value}pps` },
+  jitter: { enabled: false, renderer: (value) => `Jitter: ${value}` },
   localCandidate: {
     enabled: false,
     renderer: (value) => `Local address: ${value?.toString()}`,
   },
+  packetRate: { enabled: false, renderer: (value) => `Packet rate: ${value}pps` },
+  packetsLost: { enabled: false, renderer: (value) => `Packets lost: ${value}` },
   remoteCandidate: {
     enabled: false,
     renderer: (value) => `Remote address: ${value?.toString()}`,
@@ -35,6 +37,10 @@ export const VideoStatistics: FC<Props> = ({ config }) => {
       ...defaultConfig.headerBitrate,
       ...config?.headerBitrate,
     },
+    jitter: {
+      ...defaultConfig.jitter,
+      ...config?.jitter,
+    },
     localCandidate: {
       ...defaultConfig.localCandidate,
       ...config?.localCandidate,
@@ -42,6 +48,10 @@ export const VideoStatistics: FC<Props> = ({ config }) => {
     packetRate: {
       ...defaultConfig.packetRate,
       ...config?.packetRate,
+    },
+    packetsLost: {
+      ...defaultConfig.packetsLost,
+      ...config?.packetsLost,
     },
     remoteCandidate: {
       ...defaultConfig.remoteCandidate,

@@ -1,12 +1,19 @@
 import { Candidate } from './candidate';
 
-export interface RateStatistics {
+export interface OutboundStatistics {
   bitrate?: number;
   headerBitrate?: number;
   packetRate?: number;
 }
 
-export interface Statistics extends RateStatistics {
+export interface InboundStatistics {
+  jitter?: number;
+  packetsLost?: number;
+}
+
+interface CandidateStatistics {
   localCandidate?: Candidate;
   remoteCandidate?: Candidate;
 }
+
+export type Statistics = InboundStatistics & OutboundStatistics & CandidateStatistics;

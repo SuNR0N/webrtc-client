@@ -2,7 +2,15 @@ import { Dispatch } from 'react';
 import adapter from 'webrtc-adapter';
 
 import { WebRTCContextAction, WebRTCContextActionType } from '../actions/webrtc-context-action';
-import { byeMessage, Candidate, candidateMessage, RateStatistics, SendSignalingMessage, WebRTCContextState } from '../models';
+import {
+  byeMessage,
+  Candidate,
+  candidateMessage,
+  InboundStatistics,
+  OutboundStatistics,
+  SendSignalingMessage,
+  WebRTCContextState,
+} from '../models';
 
 export const setCodecPreferencesSupported = 'RTCRtpTransceiver' in window && 'setCodecPreferences' in window.RTCRtpTransceiver.prototype;
 export const setParametersSupported = 'RTCRtpSender' in window && 'setParameters' in window.RTCRtpSender.prototype;
@@ -77,17 +85,33 @@ export const replaceVideoTrack = (peers: Map<string, RTCPeerConnection>, withTra
   }
 };
 
-export const calculateBitrateStats = (statsReport: RTCStatsReport, latestStatsReport?: RTCStatsReport): RateStatistics | undefined => {
-  const [, report] = Array.from(statsReport.entries()).find(([, report]) => report.type === 'outbound-rtp' && !report.isRemote) || [];
-  const previousReport = latestStatsReport?.get(report?.id);
-  if (report && previousReport) {
-    const { timestamp, bytesSent, headerBytesSent, packetsSent } = report;
+export const calculateInboundStatistics = (statsReport: RTCStatsReport): InboundStatistics | undefined => {
+  const [, inboundRTPReport] = Array.from(statsReport.entries()).find(([, report]) => report.type === 'remote-inbound-rtp') || [];
+  if (inboundRTPReport) {
+    const { jitter, packetsLost } = inboundRTPReport;
+    console.log(`Jitter ${jitter}, packets lost ${packetsLost}`);
+    return {
+      jitter,
+      packetsLost,
+    };
+  }
+};
+
+export const calculateOutboundStatistics = (
+  statsReport: RTCStatsReport,
+  latestStatsReport?: RTCStatsReport
+): OutboundStatistics | undefined => {
+  const [, outboundRTPReport] =
+    Array.from(statsReport.entries()).find(([, report]) => report.type === 'outbound-rtp' && !report.isRemote) || [];
+  const previousOutboundRTPReport = latestStatsReport?.get(outboundRTPReport?.id);
+  if (outboundRTPReport && previousOutboundRTPReport) {
+    const { timestamp, bytesSent, headerBytesSent, packetsSent } = outboundRTPReport;
     const {
       timestamp: prevTimestamp,
       bytesSent: prevBytesSent,
       headerBytesSent: prevHeaderBytesSent,
       packetsSent: prevPacketsSent,
-    } = previousReport;
+    } = previousOutboundRTPReport;
     // calculate bitrate
     const timeDiff = timestamp - prevTimestamp;
     const bitrate = Math.floor((8 * (bytesSent - prevBytesSent)) / timeDiff);
