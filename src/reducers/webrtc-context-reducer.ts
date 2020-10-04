@@ -24,10 +24,13 @@ import {
   getCandidate,
   hangUp,
   replaceVideoTrack,
+  setParametersSupported,
+  setPreferredCodec,
   updateBandwidthRestriction,
 } from '../utils/webrtc-utils';
 
 export const initialState: WebRTCContextState = {
+  audioCodec: undefined,
   audioMuted: false,
   avStream: undefined,
   iceServers: undefined,
@@ -43,6 +46,7 @@ export const initialState: WebRTCContextState = {
   screenShare: undefined,
   sendSignalingMessage: () => {},
   statistics: {},
+  videoCodec: undefined,
   videoMuted: false,
 };
 
@@ -123,7 +127,7 @@ const handleInitiatePeerConnection: ReducerMiddleware<InitiatePeerConnectionActi
   payload: id,
 }) => {
   const state = getState();
-  const { iceServers, localStream, peers, sendSignalingMessage } = state;
+  const { audioCodec, iceServers, localStream, peers, sendSignalingMessage, videoCodec } = state;
   if (peers.has(id)) {
     console.log(`You are already in a call with: ${id}`);
     return;
@@ -133,6 +137,12 @@ const handleInitiatePeerConnection: ReducerMiddleware<InitiatePeerConnectionActi
   dispatch({ type: WebRTCContextActionType.UpdatePeerId, payload: id });
   if (localStream) {
     localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
+  }
+  if (audioCodec) {
+    setPreferredCodec(audioCodec, pc, 'audio', localStream);
+  }
+  if (videoCodec) {
+    setPreferredCodec(videoCodec, pc, 'video', localStream);
   }
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
@@ -302,6 +312,11 @@ const handleUnmuteVideo = (state: WebRTCContextState): WebRTCContextState => {
   };
 };
 
+const handleUpdateAudioCodec = (state: WebRTCContextState, codec?: RTCRtpCodecCapability): WebRTCContextState => ({
+  ...state,
+  audioCodec: codec,
+});
+
 const handleUpdateICEServers = (state: WebRTCContextState, iceServers: RTCIceServer[]): WebRTCContextState => ({
   ...state,
   iceServers,
@@ -316,7 +331,7 @@ const handleUpdateMaximumBitrate: ReducerMiddleware<UpdateMaximumBitrateAction> 
   payload: value,
 }) => {
   const { peers } = getState();
-  if (window.RTCRtpSender && window.RTCRtpSender.prototype.setParameters) {
+  if (setParametersSupported) {
     peers.forEach(async (peer) => {
       const sender = peer.getSenders().find((s) => s.track?.kind === 'video');
       if (!sender) {
@@ -392,6 +407,11 @@ const handleUpdateStatsReport = (state: WebRTCContextState, statsReport: RTCStat
   };
 };
 
+const handleUpdateVideoCodec = (state: WebRTCContextState, codec?: RTCRtpCodecCapability): WebRTCContextState => ({
+  ...state,
+  videoCodec: codec,
+});
+
 export const asyncActionHandlers: AsyncActionHandlers<Reducer<WebRTCContextState, WebRTCContextAction>, AsyncWebRTCContextAction> = {
   AcceptOffer: handleAcceptOffer,
   AddICECandidate: handleAddICECandidate,
@@ -429,6 +449,8 @@ export const reducer = (state: WebRTCContextState, action: WebRTCContextAction):
       return handleUnmuteAudio(state);
     case WebRTCContextActionType.UnmuteVideo:
       return handleUnmuteVideo(state);
+    case WebRTCContextActionType.UpdateAudioCodec:
+      return handleUpdateAudioCodec(state, action.payload);
     case WebRTCContextActionType.UpdateICEServers:
       return handleUpdateICEServers(state, action.payload);
     case WebRTCContextActionType.UpdateLocalStream:
@@ -445,6 +467,8 @@ export const reducer = (state: WebRTCContextState, action: WebRTCContextAction):
       return handleUpdateSendSignalingMessage(state, action.payload);
     case WebRTCContextActionType.UpdateStatsReport:
       return handleUpdateStatsReport(state, action.payload);
+    case WebRTCContextActionType.UpdateVideoCodec:
+      return handleUpdateVideoCodec(state, action.payload);
     default:
       return state;
   }

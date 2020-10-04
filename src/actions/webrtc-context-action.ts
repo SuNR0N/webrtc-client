@@ -21,6 +21,7 @@ export enum WebRTCContextActionType {
   StopScreenShareSuccess = 'StopScreenShareSuccess',
   UnmuteAudio = 'UnmuteAudio',
   UnmuteVideo = 'UnmuteVideo',
+  UpdateAudioCodec = 'UpdateAudioCodec',
   UpdateICEServers = 'UpdateICEServers',
   UpdateLocalStream = 'UpdateLocalStream',
   UpdateMaximumBitrate = 'UpdateMaximumBitrate',
@@ -30,6 +31,7 @@ export enum WebRTCContextActionType {
   UpdateRemoteStream = 'UpdateRemoteStream',
   UpdateSendSignalingMessage = 'UpdateSendSignalingMessage',
   UpdateStatsReport = 'UpdateStatsReport',
+  UpdateVideoCodec = 'UpdateVideoCodec',
 }
 
 interface IdPayload {
@@ -128,6 +130,10 @@ interface UnmuteVideoAction extends Action {
   type: typeof WebRTCContextActionType.UnmuteVideo;
 }
 
+interface UpdateAudioCodecAction extends ActionWithPayload<RTCRtpCodecCapability | undefined> {
+  type: typeof WebRTCContextActionType.UpdateAudioCodec;
+}
+
 interface UpdateICEServersAction extends ActionWithPayload<RTCIceServer[]> {
   type: typeof WebRTCContextActionType.UpdateICEServers;
 }
@@ -164,6 +170,10 @@ interface UpdateStatsReportAction extends ActionWithPayload<RTCStatsReport> {
   type: typeof WebRTCContextActionType.UpdateStatsReport;
 }
 
+interface UpdateVideoCodecAction extends ActionWithPayload<RTCRtpCodecCapability | undefined> {
+  type: typeof WebRTCContextActionType.UpdateVideoCodec;
+}
+
 export type AsyncWebRTCContextAction =
   | AcceptOfferAction
   | AddICECandidateAction
@@ -188,6 +198,7 @@ export type WebRTCContextAction =
   | StopScreenShareSuccessAction
   | UnmuteAudioAction
   | UnmuteVideoAction
+  | UpdateAudioCodecAction
   | UpdateICEServersAction
   | UpdateLocalStreamAction
   | UpdateMaximumBitrateStartedAction
@@ -195,4 +206,5 @@ export type WebRTCContextAction =
   | UpdatePeerIdAction
   | UpdateRemoteStreamAction
   | UpdateSendSignalingMessageAction
-  | UpdateStatsReportAction;
+  | UpdateStatsReportAction
+  | UpdateVideoCodecAction;

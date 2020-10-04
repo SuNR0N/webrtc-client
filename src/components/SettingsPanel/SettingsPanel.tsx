@@ -24,6 +24,7 @@ import { useWebSocket } from '../../hooks';
 import { disableLogging, enableLogging } from '../../utils/logging-utils';
 import { ConnectionState, MenuOption } from '../../models';
 import { WebRTCContextActionType } from '../../actions/webrtc-context-action';
+import { setCodecPreferencesSupported } from '../../utils/webrtc-utils';
 import './SettingsPanel.scss';
 
 interface Props {
@@ -31,9 +32,11 @@ interface Props {
 }
 
 interface FormFields {
+  audioCodec: RTCRtpCodecCapability | string;
   debug: boolean;
   signalingServerUri: string;
   maximumBitrate: string;
+  videoCodec: RTCRtpCodecCapability | string;
 }
 
 const BITRATE_OPTIONS: MenuOption<number>[] = [
@@ -44,6 +47,48 @@ const BITRATE_OPTIONS: MenuOption<number>[] = [
   { label: '250', value: 250 },
   { label: '125', value: 125 },
 ];
+
+const VIDEO_CODEC_OPTIONS = ((setCodecPreferencesSupported && RTCRtpSender.getCapabilities('video')?.codecs) || []).reduce(
+  (acc, codec) => {
+    const excludedCodecs = ['video/rtx', 'video/red', 'video/ulpfec'];
+    const { clockRate, mimeType, sdpFmtpLine } = codec;
+    if (!excludedCodecs.includes(mimeType)) {
+      const labelParts = [mimeType, `${clockRate} Hz`];
+      switch (mimeType) {
+        case 'video/VP9':
+          sdpFmtpLine && labelParts.push(sdpFmtpLine.replace(/profile-id=(\d)/, 'Profile $1'));
+          break;
+        case 'video/H264':
+          sdpFmtpLine &&
+            labelParts.push(
+              sdpFmtpLine.replace(/.*packetization-mode=(\d);profile-level-id=(.*)/, 'Packetization Mode $1 | Profile Level $2')
+            );
+          break;
+        default:
+          break;
+      }
+      acc.push({
+        label: labelParts.join(' | '),
+        value: codec,
+      });
+    }
+    return acc;
+  },
+  [{ label: 'Default', value: 'default' }] as MenuOption<RTCRtpCodecCapability | string>[]
+);
+
+const AUDIO_CODEC_OPTIONS = ((setCodecPreferencesSupported && RTCRtpSender.getCapabilities('audio')?.codecs) || []).reduce(
+  (acc, codec) => {
+    const { clockRate, mimeType, channels } = codec;
+    const labelParts = [mimeType, `${clockRate} Hz`, `Channels ${channels}`];
+    acc.push({
+      label: labelParts.join(' | '),
+      value: codec,
+    });
+    return acc;
+  },
+  [{ label: 'Default', value: 'default' }] as MenuOption<RTCRtpCodecCapability | string>[]
+);
 
 export const SettingsPanel: FC<Props> = ({ className }) => {
   const {
@@ -56,11 +101,13 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
   } = useWebRTCContext();
   useWebSocket(signalingServerUri);
   const [fieldValues, setFieldValues] = useState<FormFields>({
+    audioCodec: 'default',
     debug: true,
     maximumBitrate: '0',
     signalingServerUri: '',
+    videoCodec: 'default',
   });
-  const { debug, maximumBitrate } = fieldValues;
+  const { audioCodec, debug, maximumBitrate, videoCodec } = fieldValues;
 
   const handleConnect = () => {
     dispatchSignalingAction({ type: SignalingContextActionType.Connect, payload: fieldValues.signalingServerUri });
@@ -108,6 +155,20 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
       payload: parseInt(maximumBitrate, 10),
     });
   }, [dispatchWebRTCAction, maximumBitrate]);
+
+  useEffect(() => {
+    dispatchWebRTCAction({
+      type: WebRTCContextActionType.UpdateAudioCodec,
+      payload: typeof audioCodec === 'string' ? undefined : audioCodec,
+    });
+  }, [dispatchWebRTCAction, audioCodec]);
+
+  useEffect(() => {
+    dispatchWebRTCAction({
+      type: WebRTCContextActionType.UpdateVideoCodec,
+      payload: typeof videoCodec === 'string' ? undefined : videoCodec,
+    });
+  }, [dispatchWebRTCAction, videoCodec]);
 
   return (
     <Accordion className={cn('settings-panel', className)}>
@@ -172,6 +233,30 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
               >
                 {BITRATE_OPTIONS.map(({ label, value }) => (
                   <MenuItem key={value} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth variant="outlined" disabled={!setCodecPreferencesSupported}>
+              <InputLabel id="inputVideoCodec">Video Codec</InputLabel>
+              <Select label="Video Codec" id="inputVideoCodec" name="videoCodec" value={fieldValues.videoCodec} onChange={handleSelect}>
+                {VIDEO_CODEC_OPTIONS.map(({ label, value }, i) => (
+                  <MenuItem key={JSON.stringify(value)} value={value as any}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth variant="outlined" disabled={!setCodecPreferencesSupported}>
+              <InputLabel id="inputAudioCodec">Audio Codec</InputLabel>
+              <Select label="Audio Codec" id="inputAudioCodec" name="audioCodec" value={fieldValues.audioCodec} onChange={handleSelect}>
+                {AUDIO_CODEC_OPTIONS.map(({ label, value }) => (
+                  <MenuItem key={JSON.stringify(value)} value={value as any}>
                     {label}
                   </MenuItem>
                 ))}

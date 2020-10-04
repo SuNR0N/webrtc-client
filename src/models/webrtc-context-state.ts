@@ -3,6 +3,7 @@ import { SendSignalingMessage } from './signaling-message';
 import { Statistics } from './statistics';
 
 export interface WebRTCContextState {
+  audioCodec?: RTCRtpCodecCapability;
   audioMuted: boolean;
   avStream?: MediaStream;
   iceServers?: RTCIceServer[];
@@ -18,5 +19,6 @@ export interface WebRTCContextState {
   screenShare?: MediaStream;
   sendSignalingMessage: SendSignalingMessage;
   statistics: Statistics;
+  videoCodec?: RTCRtpCodecCapability;
   videoMuted: boolean;
 }

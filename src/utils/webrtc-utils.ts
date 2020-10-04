@@ -4,6 +4,9 @@ import adapter from 'webrtc-adapter';
 import { WebRTCContextAction, WebRTCContextActionType } from '../actions/webrtc-context-action';
 import { byeMessage, Candidate, candidateMessage, RateStatistics, SendSignalingMessage, WebRTCContextState } from '../models';
 
+export const setCodecPreferencesSupported = 'RTCRtpTransceiver' in window && 'setCodecPreferences' in window.RTCRtpTransceiver.prototype;
+export const setParametersSupported = 'RTCRtpSender' in window && 'setParameters' in window.RTCRtpSender.prototype;
+
 export const createPeerConnection = (
   id: string,
   state: WebRTCContextState,
@@ -124,4 +127,26 @@ export const updateBandwidthRestriction = (sdp: string, value: number): string =
   }
   console.log(`Applying bandwidth restriction to SDP:\n${sdp}`);
   return sdp;
+};
+
+export const setPreferredCodec = (
+  preferredCodec: RTCRtpCodecCapability,
+  pc: RTCPeerConnection,
+  type: 'audio' | 'video',
+  stream?: MediaStream
+): void => {
+  if (stream && setCodecPreferencesSupported) {
+    const [track] = type === 'audio' ? stream?.getAudioTracks() : stream?.getVideoTracks();
+    const transceiver = pc.getTransceivers().find((transceiver) => transceiver.sender.track === track);
+    const { codecs: codecsWithDefaultOrder } = RTCRtpSender.getCapabilities(type)!;
+    const codecIndex = codecsWithDefaultOrder.findIndex((codec) => JSON.stringify(codec) === JSON.stringify(preferredCodec));
+    if (codecIndex > -1) {
+      const codecsWithPreferredOrder: RTCRtpCodecCapability[] = [
+        preferredCodec,
+        ...codecsWithDefaultOrder.slice(0, codecIndex),
+        ...codecsWithDefaultOrder.slice(codecIndex + 1),
+      ];
+      transceiver?.setCodecPreferences(codecsWithPreferredOrder);
+    }
+  }
 };
