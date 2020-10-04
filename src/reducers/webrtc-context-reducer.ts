@@ -389,12 +389,6 @@ const handleUpdateSendSignalingMessage = (state: WebRTCContextState, sendSignali
 });
 
 const handleUpdateStatsReport = (state: WebRTCContextState, statsReport: RTCStatsReport): WebRTCContextState => {
-  console.log(
-    Array.from(statsReport.entries()).reduce((acc, [key, report]) => {
-      acc[key] = report;
-      return acc;
-    }, {} as { [key: string]: any })
-  );
   const { latestStatsReport, statistics } = state;
   const outboundStatistics = calculateOutboundStatistics(statsReport, latestStatsReport);
   const remoteInboundStatistics = calculateRemoteInboundStatistics(statsReport);
