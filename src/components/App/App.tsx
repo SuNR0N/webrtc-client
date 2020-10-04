@@ -64,6 +64,8 @@ export const App: FC = () => {
             bitrate: { enabled: true },
             headerBitrate: { enabled: true },
             packetRate: { enabled: true },
+            jitter: { enabled: true },
+            packetsLost: { enabled: true },
             localCandidate: { enabled: true },
           }}
         />
@@ -75,8 +77,6 @@ export const App: FC = () => {
             stream={remoteStream}
             flipHorizontal={true}
             statsConfig={{
-              jitter: { enabled: true },
-              packetsLost: { enabled: true },
               remoteCandidate: { enabled: true },
             }}
           />

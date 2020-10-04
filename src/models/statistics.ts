@@ -6,7 +6,7 @@ export interface OutboundStatistics {
   packetRate?: number;
 }
 
-export interface InboundStatistics {
+export interface RemoteInboundStatistics {
   jitter?: number;
   packetsLost?: number;
 }
@@ -16,4 +16,4 @@ interface CandidateStatistics {
   remoteCandidate?: Candidate;
 }
 
-export type Statistics = InboundStatistics & OutboundStatistics & CandidateStatistics;
+export type Statistics = RemoteInboundStatistics & OutboundStatistics & CandidateStatistics;

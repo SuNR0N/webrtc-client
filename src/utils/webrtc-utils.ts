@@ -6,7 +6,7 @@ import {
   byeMessage,
   Candidate,
   candidateMessage,
-  InboundStatistics,
+  RemoteInboundStatistics,
   OutboundStatistics,
   SendSignalingMessage,
   WebRTCContextState,
@@ -85,7 +85,7 @@ export const replaceVideoTrack = (peers: Map<string, RTCPeerConnection>, withTra
   }
 };
 
-export const calculateInboundStatistics = (statsReport: RTCStatsReport): InboundStatistics | undefined => {
+export const calculateRemoteInboundStatistics = (statsReport: RTCStatsReport): RemoteInboundStatistics | undefined => {
   const [, inboundRTPReport] = Array.from(statsReport.entries()).find(([, report]) => report.type === 'remote-inbound-rtp') || [];
   if (inboundRTPReport) {
     const { jitter, packetsLost } = inboundRTPReport;
