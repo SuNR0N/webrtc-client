@@ -88,11 +88,14 @@ export const replaceVideoTrack = (peers: Map<string, RTCPeerConnection>, withTra
 export const calculateRemoteInboundStatistics = (statsReport: RTCStatsReport): RemoteInboundStatistics | undefined => {
   const [, inboundRTPReport] = Array.from(statsReport.entries()).find(([, report]) => report.type === 'remote-inbound-rtp') || [];
   if (inboundRTPReport) {
-    const { jitter, packetsLost } = inboundRTPReport;
-    console.log(`Jitter ${jitter}, packets lost ${packetsLost}`);
+    const { jitter, packetsLost, roundTripTime } = inboundRTPReport;
+    const latency = roundTripTime / 2;
+    console.log(`Jitter ${jitter}, latency ${latency}ms, round-trip time ${roundTripTime}ms, packets lost ${packetsLost}`);
     return {
       jitter,
+      latency,
       packetsLost,
+      roundTripTime,
     };
   }
 };
@@ -105,7 +108,7 @@ export const calculateOutboundStatistics = (
     Array.from(statsReport.entries()).find(([, report]) => report.type === 'outbound-rtp' && !report.isRemote) || [];
   const previousOutboundRTPReport = latestStatsReport?.get(outboundRTPReport?.id);
   if (outboundRTPReport && previousOutboundRTPReport) {
-    const { timestamp, bytesSent, headerBytesSent, packetsSent } = outboundRTPReport;
+    const { bytesSent, framesPerSecond, headerBytesSent, packetsSent, timestamp } = outboundRTPReport;
     const {
       timestamp: prevTimestamp,
       bytesSent: prevBytesSent,
@@ -117,9 +120,10 @@ export const calculateOutboundStatistics = (
     const bitrate = Math.floor((8 * (bytesSent - prevBytesSent)) / timeDiff);
     const headerBitrate = Math.floor((8 * (headerBytesSent - prevHeaderBytesSent)) / timeDiff);
     const packetRate = Math.floor((1000 * (packetsSent - prevPacketsSent)) / timeDiff);
-    console.log(`Bitrate ${bitrate}kbps, overhead ${headerBitrate}kbps, ${packetRate} packets/second`);
+    console.log(`Bitrate ${bitrate}kbps, overhead ${headerBitrate}kbps, ${packetRate} packets/second, FPS ${framesPerSecond}`);
     return {
       bitrate,
+      framesPerSecond,
       headerBitrate,
       packetRate,
     };

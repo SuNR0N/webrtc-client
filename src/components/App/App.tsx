@@ -62,10 +62,13 @@ export const App: FC = () => {
           stream={localStream}
           statsConfig={{
             bitrate: { enabled: true },
+            framesPerSecond: { enabled: true },
             headerBitrate: { enabled: true },
-            packetRate: { enabled: true },
             jitter: { enabled: true },
+            latency: { enabled: true },
+            packetRate: { enabled: true },
             packetsLost: { enabled: true },
+            roundTripTime: { enabled: true },
             localCandidate: { enabled: true },
           }}
         />

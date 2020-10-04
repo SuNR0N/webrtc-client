@@ -12,8 +12,10 @@ interface Props {
 
 const defaultConfig: Required<StatsConfig<Statistics, StatisticConfig<Statistics>>> = {
   bitrate: { enabled: false, renderer: (value) => `Bitrate: ${value}kbps` },
+  framesPerSecond: { enabled: false, renderer: (value) => `FPS: ${value}` },
   headerBitrate: { enabled: false, renderer: (value) => `Overhead: ${value}kbps` },
   jitter: { enabled: false, renderer: (value) => `Jitter: ${value}` },
+  latency: { enabled: false, renderer: (value) => `Latency: ${value}ms` },
   localCandidate: {
     enabled: false,
     renderer: (value) => `Local address: ${value?.toString()}`,
@@ -24,6 +26,7 @@ const defaultConfig: Required<StatsConfig<Statistics, StatisticConfig<Statistics
     enabled: false,
     renderer: (value) => `Remote address: ${value?.toString()}`,
   },
+  roundTripTime: { enabled: false, renderer: (value) => `RTT: ${value}ms` },
 };
 
 export const VideoStatistics: FC<Props> = ({ config }) => {
@@ -33,6 +36,10 @@ export const VideoStatistics: FC<Props> = ({ config }) => {
       ...defaultConfig.bitrate,
       ...config?.bitrate,
     },
+    framesPerSecond: {
+      ...defaultConfig.framesPerSecond,
+      ...config?.framesPerSecond,
+    },
     headerBitrate: {
       ...defaultConfig.headerBitrate,
       ...config?.headerBitrate,
@@ -40,6 +47,10 @@ export const VideoStatistics: FC<Props> = ({ config }) => {
     jitter: {
       ...defaultConfig.jitter,
       ...config?.jitter,
+    },
+    latency: {
+      ...defaultConfig.latency,
+      ...config?.latency,
     },
     localCandidate: {
       ...defaultConfig.localCandidate,
@@ -56,6 +67,10 @@ export const VideoStatistics: FC<Props> = ({ config }) => {
     remoteCandidate: {
       ...defaultConfig.remoteCandidate,
       ...config?.remoteCandidate,
+    },
+    roundTripTime: {
+      ...defaultConfig.roundTripTime,
+      ...config?.roundTripTime,
     },
   };
   const {
