@@ -1,18 +1,17 @@
-import React, { ChangeEvent, FC, useEffect, useState } from 'react';
-import { Grid } from '@material-ui/core';
+import React, { ChangeEvent, FC, useState } from 'react';
+import { Button, Grid } from '@material-ui/core';
 
-import { ControlBar, SettingsPanel, Video } from '../';
+import { ControlBar, IncomingConnectionControls, InputDevicesDialog, InputGroup, SettingsPanel, Video } from '../';
 import { useWebRTCContext, useSignalingContext } from '../../contexts';
 import { WebRTCContextActionType } from '../../actions/webrtc-context-action';
-import { InputGroup } from '../InputGroup/InputGroup';
 import { ConnectionState } from '../../models';
-import { IncomingConnectionControls } from '../IncomingConnectionControls/IncomingConnectionControls';
 
 interface FormFields {
   peerId: string;
 }
 
 export const App: FC = () => {
+  const [showDialog, setShowDialog] = useState(true);
   const {
     dispatch: dispatchWebRTCAction,
     state: { pendingOffers, localStream, peerId, remoteStream },
@@ -46,32 +45,48 @@ export const App: FC = () => {
     dispatchWebRTCAction({ type: WebRTCContextActionType.DeclineOffer, payload: pendingOffers[0].id });
   };
 
-  useEffect(() => {
-    dispatchWebRTCAction({ type: WebRTCContextActionType.InitAVStream });
-  }, [dispatchWebRTCAction]);
+  const handleSelectInputDevices = (audioDeviceId: string, videoDeviceId: string) => {
+    handleCloseInputDevicesDialog();
+    dispatchWebRTCAction({ type: WebRTCContextActionType.InitAVStream, payload: { audioDeviceId, videoDeviceId } });
+  };
+
+  const handleShowInputDevicesDialog = () => {
+    setShowDialog(true);
+  };
+
+  const handleCloseInputDevicesDialog = () => {
+    setShowDialog(false);
+  };
 
   return (
     <Grid container spacing={3}>
+      <InputDevicesDialog open={showDialog} onClose={handleCloseInputDevicesDialog} onSelectInputDevices={handleSelectInputDevices} />
       <Grid item xs={12}>
         <SettingsPanel />
       </Grid>
-      <Grid item xs={6}>
-        <Video
-          id={clientId}
-          muted={true}
-          stream={localStream}
-          statsConfig={{
-            bitrate: { enabled: true },
-            framesPerSecond: { enabled: true },
-            headerBitrate: { enabled: true },
-            jitter: { enabled: true },
-            latency: { enabled: true },
-            packetRate: { enabled: true },
-            packetsLost: { enabled: true },
-            roundTripTime: { enabled: true },
-            localCandidate: { enabled: true },
-          }}
-        />
+      <Grid container item xs={6} alignItems="center" justify="center">
+        {localStream ? (
+          <Video
+            id={clientId}
+            muted={true}
+            stream={localStream}
+            statsConfig={{
+              bitrate: { enabled: true },
+              framesPerSecond: { enabled: true },
+              headerBitrate: { enabled: true },
+              jitter: { enabled: true },
+              latency: { enabled: true },
+              packetRate: { enabled: true },
+              packetsLost: { enabled: true },
+              roundTripTime: { enabled: true },
+              localCandidate: { enabled: true },
+            }}
+          />
+        ) : (
+          <Button variant="outlined" color="primary" onClick={handleShowInputDevicesDialog}>
+            Show Input Devices
+          </Button>
+        )}
       </Grid>
       <Grid container item xs={6} alignItems="center">
         {remoteStream ? (
@@ -99,9 +114,11 @@ export const App: FC = () => {
           />
         )}
       </Grid>
-      <Grid item xs={12}>
-        <ControlBar />
-      </Grid>
+      {localStream && (
+        <Grid item xs={12}>
+          <ControlBar />
+        </Grid>
+      )}
     </Grid>
   );
 };

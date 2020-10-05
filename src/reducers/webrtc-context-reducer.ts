@@ -113,8 +113,10 @@ const handleDeclineOffer: ReducerMiddleware<DeclineOfferAction> = ({ dispatch, g
   dispatch({ type: WebRTCContextActionType.RemovePendingOffer, payload: id });
 };
 
-const handleInitAVStream: ReducerMiddleware<InitAVStreamAction> = ({ dispatch }) => async () => {
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+const handleInitAVStream: ReducerMiddleware<InitAVStreamAction> = ({ dispatch }) => async ({
+  payload: { audioDeviceId, videoDeviceId },
+}) => {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: { deviceId: audioDeviceId }, video: { deviceId: videoDeviceId } });
   dispatch({ type: WebRTCContextActionType.InitAVStreamSuccess, payload: stream });
 };
 

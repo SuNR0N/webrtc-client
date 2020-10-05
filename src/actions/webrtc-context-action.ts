@@ -46,6 +46,11 @@ interface ICECandidatePayload extends IdPayload {
   candidate: RTCIceCandidate;
 }
 
+interface InputDevicesPayload {
+  audioDeviceId: string;
+  videoDeviceId: string;
+}
+
 export interface ClosePeerConnectionPayload extends IdPayload {
   error?: string;
 }
@@ -70,7 +75,7 @@ export interface DeclineOfferAction extends ActionWithPayload<string> {
   type: typeof WebRTCContextActionType.DeclineOffer;
 }
 
-export interface InitAVStreamAction extends Action {
+export interface InitAVStreamAction extends ActionWithPayload<InputDevicesPayload> {
   type: typeof WebRTCContextActionType.InitAVStream;
 }
 

@@ -2,6 +2,7 @@ export * from './App/App';
 export * from './ControlBar/ControlBar';
 export * from './IdBadge/IdBadge';
 export * from './IncomingConnectionControls/IncomingConnectionControls';
+export * from './InputDevicesDialog/InputDevicesDialog';
 export * from './InputGroup/InputGroup';
 export * from './RoundedIconButton/RoundedIconButton';
 export * from './SettingsPanel/SettingsPanel';
