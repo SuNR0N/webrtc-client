@@ -45,17 +45,29 @@ export const createPeerConnection = (
     console.log(id, 'signalingstatechange', pc.signalingState);
   });
 
-  const intervalId = setInterval(async () => {
+  const queryStatsIntervalId = setInterval(async () => {
     if (pc.signalingState === 'closed') {
-      clearInterval(intervalId);
+      clearInterval(queryStatsIntervalId);
       return;
     }
-    const sender = pc.getSenders().find((s) => s.track && s.track.kind === 'video');
+    const sender = pc.getSenders().find((s) => s.track?.kind === 'video');
     const statsReport = await sender?.getStats();
     if (statsReport) {
       dispatch({ type: WebRTCContextActionType.UpdateStatsReport, payload: statsReport });
     }
   }, state.queryStatsInterval);
+
+  const querySynchronizationSourcesIntervalId = setInterval(() => {
+    if (pc.signalingState === 'closed') {
+      clearInterval(querySynchronizationSourcesIntervalId);
+      return;
+    }
+    const receiver = pc.getReceivers().find((r) => r.track.kind === 'audio');
+    if (receiver && receiver.getSynchronizationSources) {
+      const [source] = receiver.getSynchronizationSources();
+      dispatch({ type: WebRTCContextActionType.UpdateRemoteAudioLevel, payload: source?.audioLevel });
+    }
+  }, state.querySynchronizationSourcesInterval);
 
   return pc;
 };

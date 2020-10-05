@@ -1,6 +1,7 @@
 import React, { FC, useEffect, useState } from 'react';
 import cn from 'classnames';
-import { Grid } from '@material-ui/core';
+import { Grid, Tooltip } from '@material-ui/core';
+import { VolumeMute } from '@material-ui/icons';
 
 import { IdBadge, VideoAction, VideoActions, VideoStatistics } from '../';
 import { Statistics, StatsConfig, StatisticConfig } from '../../models';
@@ -13,6 +14,7 @@ interface Props {
   id?: string;
   muted?: boolean;
   playsInline?: boolean;
+  showMuted?: boolean;
   stream?: MediaStream;
   statsConfig?: StatsConfig<Statistics, Partial<StatisticConfig<Statistics>>>;
 }
@@ -24,6 +26,7 @@ export const Video: FC<Props> = ({
   flipHorizontal = false,
   muted = false,
   playsInline = true,
+  showMuted = false,
   stream,
   statsConfig,
 }) => {
@@ -72,6 +75,11 @@ export const Video: FC<Props> = ({
           onLoadedMetadata={handleLoadedMetadata}
         />
         {showStatistics && <VideoStatistics config={statsConfig} />}
+        {showMuted && (
+          <Tooltip title="Muted">
+            <VolumeMute fontSize="large" className="video__muted-icon" />
+          </Tooltip>
+        )}
         <VideoActions className="video__actions" onAction={handleAction} />
       </Grid>
     </Grid>

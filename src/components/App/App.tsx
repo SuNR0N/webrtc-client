@@ -14,7 +14,14 @@ export const App: FC = () => {
   const [showDialog, setShowDialog] = useState(true);
   const {
     dispatch: dispatchWebRTCAction,
-    state: { pendingOffers, localStream, peerId, remoteStream },
+    state: {
+      audioMuted,
+      pendingOffers,
+      localStream,
+      peerId,
+      remoteStream,
+      statistics: { remoteAudioLevel },
+    },
   } = useWebRTCContext();
   const {
     state: { clientId, connectionState },
@@ -69,6 +76,7 @@ export const App: FC = () => {
           <Video
             id={clientId}
             muted={true}
+            showMuted={audioMuted}
             stream={localStream}
             statsConfig={{
               bitrate: { enabled: true },
@@ -92,9 +100,11 @@ export const App: FC = () => {
         {remoteStream ? (
           <Video
             id={peerId}
+            showMuted={!remoteAudioLevel}
             stream={remoteStream}
             flipHorizontal={true}
             statsConfig={{
+              remoteAudioLevel: { enabled: true },
               remoteCandidate: { enabled: true },
             }}
           />

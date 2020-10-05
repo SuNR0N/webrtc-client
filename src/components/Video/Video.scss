@@ -1,8 +1,17 @@
+@import '../../styles/_functions';
+
 .video {
   $self: &;
 
   &__id-badge.id-badge {
     margin-bottom: 1rem;
+  }
+
+  &__muted-icon {
+    position: absolute;
+    left: 1rem;
+    bottom: 1rem;
+    color: color(error);
   }
 
   &__wrapper {

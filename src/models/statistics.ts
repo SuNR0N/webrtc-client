@@ -19,4 +19,8 @@ interface CandidateStatistics {
   remoteCandidate?: Candidate;
 }
 
-export type Statistics = RemoteInboundStatistics & OutboundStatistics & CandidateStatistics;
+interface AudioStatistics {
+  remoteAudioLevel?: number;
+}
+
+export type Statistics = RemoteInboundStatistics & OutboundStatistics & CandidateStatistics & AudioStatistics;

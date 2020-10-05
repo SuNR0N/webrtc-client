@@ -22,6 +22,7 @@ const defaultConfig: Required<StatsConfig<Statistics, StatisticConfig<Statistics
   },
   packetRate: { enabled: false, renderer: (value) => `Packet rate: ${value}pps` },
   packetsLost: { enabled: false, renderer: (value) => `Packets lost: ${value}` },
+  remoteAudioLevel: { enabled: false, renderer: (value) => `Audio level: ${value}` },
   remoteCandidate: {
     enabled: false,
     renderer: (value) => `Remote address: ${value?.toString()}`,
@@ -63,6 +64,10 @@ export const VideoStatistics: FC<Props> = ({ config }) => {
     packetsLost: {
       ...defaultConfig.packetsLost,
       ...config?.packetsLost,
+    },
+    remoteAudioLevel: {
+      ...defaultConfig.remoteAudioLevel,
+      ...config?.remoteAudioLevel,
     },
     remoteCandidate: {
       ...defaultConfig.remoteCandidate,

@@ -28,6 +28,7 @@ export enum WebRTCContextActionType {
   UpdateMaximumBitrateStarted = 'UpdateMaximumBitrateStarted',
   UpdateMaximumBitrateSuccess = 'UpdateMaximumBitrateSuccess',
   UpdatePeerId = 'UpdatePeerId',
+  UpdateRemoteAudioLevel = 'UpdateRemoteAudioLevel',
   UpdateRemoteStream = 'UpdateRemoteStream',
   UpdateSendSignalingMessage = 'UpdateSendSignalingMessage',
   UpdateStatsReport = 'UpdateStatsReport',
@@ -163,6 +164,10 @@ interface UpdatePeerIdAction extends ActionWithPayload<string> {
   type: typeof WebRTCContextActionType.UpdatePeerId;
 }
 
+interface UpdateRemoteAudioLevelAction extends ActionWithPayload<number | undefined> {
+  type: typeof WebRTCContextActionType.UpdateRemoteAudioLevel;
+}
+
 interface UpdateRemoteStreamAction extends ActionWithPayload<MediaStream> {
   type: typeof WebRTCContextActionType.UpdateRemoteStream;
 }
@@ -209,6 +214,7 @@ export type WebRTCContextAction =
   | UpdateMaximumBitrateStartedAction
   | UpdateMaximumBitrateSuccessAction
   | UpdatePeerIdAction
+  | UpdateRemoteAudioLevelAction
   | UpdateRemoteStreamAction
   | UpdateSendSignalingMessageAction
   | UpdateStatsReportAction

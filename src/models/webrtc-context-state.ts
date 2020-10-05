@@ -15,6 +15,7 @@ export interface WebRTCContextState {
   peers: Map<string, RTCPeerConnection>;
   pendingOffers: Offer[];
   queryStatsInterval: number;
+  querySynchronizationSourcesInterval: number;
   remoteStream?: MediaStream;
   screenShare?: MediaStream;
   sendSignalingMessage: SendSignalingMessage;

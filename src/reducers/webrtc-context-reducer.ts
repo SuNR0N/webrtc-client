@@ -43,6 +43,7 @@ export const initialState: WebRTCContextState = {
   peers: new Map(),
   pendingOffers: [],
   queryStatsInterval: 2000,
+  querySynchronizationSourcesInterval: 200,
   remoteStream: undefined,
   screenShare: undefined,
   sendSignalingMessage: () => {},
@@ -380,6 +381,14 @@ const handleUpdatePeerId = (state: WebRTCContextState, id: string): WebRTCContex
   peerId: id,
 });
 
+const handleUpdateRemoteAudioLevel = (state: WebRTCContextState, audioLevel?: number): WebRTCContextState => ({
+  ...state,
+  statistics: {
+    ...state.statistics,
+    remoteAudioLevel: audioLevel,
+  },
+});
+
 const handleUpdateRemoteStream = (state: WebRTCContextState, stream: MediaStream): WebRTCContextState => ({
   ...state,
   remoteStream: stream,
@@ -468,6 +477,8 @@ export const reducer = (state: WebRTCContextState, action: WebRTCContextAction):
       return handleUpdateMaximumBitrateSuccess(state, action.payload);
     case WebRTCContextActionType.UpdatePeerId:
       return handleUpdatePeerId(state, action.payload);
+    case WebRTCContextActionType.UpdateRemoteAudioLevel:
+      return handleUpdateRemoteAudioLevel(state, action.payload);
     case WebRTCContextActionType.UpdateRemoteStream:
       return handleUpdateRemoteStream(state, action.payload);
     case WebRTCContextActionType.UpdateSendSignalingMessage:
