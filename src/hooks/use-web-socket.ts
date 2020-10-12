@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { WebRTCContextActionType } from '../actions/webrtc-context-action';
 import { SignalingContextActionType } from '../actions/signaling-context-action';
 import { useWebRTCContext, useSignalingContext } from '../contexts';
-import { ConnectionState, SignalingMessage, SignalingMessageType } from '../models';
+import { ConnectionState, heartbeatMessage, HeartbeatMessage, SignalingMessage, SignalingMessageType } from '../models';
 
 export const useWebSocket = (uri?: string) => {
   const { dispatch: dispatchSignalingAction, state } = useSignalingContext();
@@ -26,37 +26,42 @@ export const useWebSocket = (uri?: string) => {
     [dispatchSignalingAction]
   );
 
-  const sendMessage = (message: SignalingMessage): void => {
-    socketRef.current?.send(JSON.stringify(message));
+  const sendMessage = (message: SignalingMessage | HeartbeatMessage): void => {
+    const strMessage = typeof message === 'string' ? message : JSON.stringify(message);
+    socketRef.current?.send(strMessage);
   };
 
   const handleMessage = useCallback(
     (event: MessageEvent) => {
       try {
-        const message: SignalingMessage = JSON.parse(event.data);
-        switch (message.type) {
-          case SignalingMessageType.Answer:
-            dispatchWebRTCAction({ type: WebRTCContextActionType.AnswerReceived, payload: message.payload });
-            break;
-          case SignalingMessageType.Bye:
-            dispatchWebRTCAction({ type: WebRTCContextActionType.ClosePeerConnection, payload: message.payload });
-            break;
-          case SignalingMessageType.Candidate:
-            dispatchWebRTCAction({ type: WebRTCContextActionType.AddICECandidate, payload: message.payload });
-            break;
-          case SignalingMessageType.Hello:
-            dispatchSignalingAction({ type: SignalingContextActionType.UpdateClientId, payload: message.payload.id });
-            break;
-          case SignalingMessageType.IceServers:
-            dispatchWebRTCAction({ type: WebRTCContextActionType.UpdateICEServers, payload: message.payload.iceServers });
-            break;
-          case SignalingMessageType.Offer:
-            dispatchWebRTCAction({ type: WebRTCContextActionType.OfferReceived, payload: message.payload });
-            break;
-          default:
-            throw new Error(`Unknown message type: ${(message as any).type}`);
+        if (event.data === '\n') {
+          sendMessage(heartbeatMessage());
+        } else {
+          const message: SignalingMessage = JSON.parse(event.data);
+          switch (message.type) {
+            case SignalingMessageType.Answer:
+              dispatchWebRTCAction({ type: WebRTCContextActionType.AnswerReceived, payload: message.payload });
+              break;
+            case SignalingMessageType.Bye:
+              dispatchWebRTCAction({ type: WebRTCContextActionType.ClosePeerConnection, payload: message.payload });
+              break;
+            case SignalingMessageType.Candidate:
+              dispatchWebRTCAction({ type: WebRTCContextActionType.AddICECandidate, payload: message.payload });
+              break;
+            case SignalingMessageType.Hello:
+              dispatchSignalingAction({ type: SignalingContextActionType.UpdateClientId, payload: message.payload.id });
+              break;
+            case SignalingMessageType.IceServers:
+              dispatchWebRTCAction({ type: WebRTCContextActionType.UpdateICEServers, payload: message.payload.iceServers });
+              break;
+            case SignalingMessageType.Offer:
+              dispatchWebRTCAction({ type: WebRTCContextActionType.OfferReceived, payload: message.payload });
+              break;
+            default:
+              throw new Error(`Unknown message type: ${(message as any).type}`);
+          }
+          console.log('WebSocket message received:', message);
         }
-        console.log('WebSocket message received:', message);
       } catch (err) {
         console.log('Failed to parse WebSocket message:', event.data, err);
       }

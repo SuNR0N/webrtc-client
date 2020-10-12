@@ -41,6 +41,8 @@ interface CandidateMessage extends MessageWithPayload<CandidateMessagePayload> {
   type: typeof SignalingMessageType.Candidate;
 }
 
+export type HeartbeatMessage = '\n';
+
 interface HelloMessage extends MessageWithPayload<SignalingMessagePayload> {
   type: typeof SignalingMessageType.Hello;
 }
@@ -69,6 +71,8 @@ export const candidateMessage = (payload: CandidateMessagePayload): CandidateMes
   type: SignalingMessageType.Candidate,
   payload,
 });
+
+export const heartbeatMessage = (): HeartbeatMessage => '\n';
 
 export const offerMessage = (payload: SDPPayload): OfferMessage => ({
   type: SignalingMessageType.Offer,
