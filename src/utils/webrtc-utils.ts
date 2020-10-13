@@ -28,6 +28,9 @@ export const createPeerConnection = (
       sendSignalingMessage(candidateMessage({ id, candidate }));
     }
   });
+  pc.addEventListener('icecandidateerror', (event) => {
+    console.log(id, 'icecandidateerror', event);
+  });
   pc.addEventListener('track', ({ streams }) => {
     dispatch({ type: WebRTCContextActionType.UpdateRemoteStream, payload: streams[0] });
   });
