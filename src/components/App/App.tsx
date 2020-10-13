@@ -5,6 +5,7 @@ import { ControlBar, IncomingConnectionControls, InputDevicesDialog, InputGroup,
 import { useWebRTCContext, useSignalingContext } from '../../contexts';
 import { WebRTCContextActionType } from '../../actions/webrtc-context-action';
 import { ConnectionState } from '../../models';
+import './App.scss';
 
 interface FormFields {
   peerId: string;
@@ -66,12 +67,12 @@ export const App: FC = () => {
   };
 
   return (
-    <Grid container spacing={3}>
+    <Grid className="app" container spacing={3}>
       <InputDevicesDialog open={showDialog} onClose={handleCloseInputDevicesDialog} onSelectInputDevices={handleSelectInputDevices} />
       <Grid item xs={12}>
         <SettingsPanel />
       </Grid>
-      <Grid container item xs={6} alignItems="center" justify="center">
+      <Grid container item xs={6} justify="center">
         {localStream ? (
           <Video
             id={clientId}
@@ -96,7 +97,7 @@ export const App: FC = () => {
           </Button>
         )}
       </Grid>
-      <Grid container item xs={6} alignItems="center">
+      <Grid container item xs={6}>
         {remoteStream ? (
           <Video
             id={peerId}
@@ -109,9 +110,15 @@ export const App: FC = () => {
             }}
           />
         ) : pendingOffers.length ? (
-          <IncomingConnectionControls id={pendingOffers[0].id} onAccept={handleAccept} onDecline={handleDecline} />
+          <IncomingConnectionControls
+            className="app__incoming-connection-controls"
+            id={pendingOffers[0].id}
+            onAccept={handleAccept}
+            onDecline={handleDecline}
+          />
         ) : (
           <InputGroup
+            className="app__initiate-connection-control"
             buttonColor="success"
             buttonText="Call"
             disabled={connectionState !== ConnectionState.Connected}

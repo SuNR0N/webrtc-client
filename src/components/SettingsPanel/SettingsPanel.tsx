@@ -97,7 +97,7 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
   } = useSignalingContext();
   const {
     dispatch: dispatchWebRTCAction,
-    state: { iceServers, maximumBitrateChangeInProgress },
+    state: { iceServers, maximumBitrateChangeInProgress, peerId },
   } = useWebRTCContext();
   useWebSocket(signalingServerUri);
   const [fieldValues, setFieldValues] = useState<FormFields>({
@@ -240,7 +240,7 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
             </FormControl>
           </Grid>
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth variant="outlined" disabled={!setCodecPreferencesSupported}>
+            <FormControl fullWidth variant="outlined" disabled={!setCodecPreferencesSupported || !!peerId}>
               <InputLabel id="inputVideoCodec">Video Codec</InputLabel>
               <Select label="Video Codec" id="inputVideoCodec" name="videoCodec" value={fieldValues.videoCodec} onChange={handleSelect}>
                 {VIDEO_CODEC_OPTIONS.map(({ label, value }, i) => (
@@ -252,7 +252,7 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
             </FormControl>
           </Grid>
           <Grid item xs={12} sm={6}>
-            <FormControl fullWidth variant="outlined" disabled={!setCodecPreferencesSupported}>
+            <FormControl fullWidth variant="outlined" disabled={!setCodecPreferencesSupported || !!peerId}>
               <InputLabel id="inputAudioCodec">Audio Codec</InputLabel>
               <Select label="Audio Codec" id="inputAudioCodec" name="audioCodec" value={fieldValues.audioCodec} onChange={handleSelect}>
                 {AUDIO_CODEC_OPTIONS.map(({ label, value }) => (
