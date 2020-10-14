@@ -7,13 +7,11 @@ import * as serviceWorker from './serviceWorker';
 import './styles/styles.scss';
 
 ReactDOM.render(
-  <React.StrictMode>
-    <SignalingContextProvider>
-      <WebRTCContextProvider>
-        <App />
-      </WebRTCContextProvider>
-    </SignalingContextProvider>
-  </React.StrictMode>,
+  <SignalingContextProvider>
+    <WebRTCContextProvider>
+      <App />
+    </WebRTCContextProvider>
+  </SignalingContextProvider>,
   document.getElementById('root')
 );
 

@@ -14,9 +14,14 @@ export enum WebRTCContextActionType {
   MuteAudio = 'MuteAudio',
   MuteVideo = 'MuteVideo',
   OfferReceived = 'OfferReceived',
+  RecordingDataReceived = 'RecordingDataReceived',
+  RecordingStarted = 'RecordingStarted',
+  RecordingStopped = 'RecordingStopped',
   RemovePendingOffer = 'RemovePendingOffer',
+  StartRecording = 'StartRecording',
   StartScreenShare = 'StartScreenShare',
   StartScreenShareSuccess = 'StartScreenShareSuccess',
+  StopRecording = 'StopRecording',
   StopScreenShare = 'StopScreenShare',
   StopScreenShareSuccess = 'StopScreenShareSuccess',
   UnmuteAudio = 'UnmuteAudio',
@@ -28,6 +33,7 @@ export enum WebRTCContextActionType {
   UpdateMaximumBitrateStarted = 'UpdateMaximumBitrateStarted',
   UpdateMaximumBitrateSuccess = 'UpdateMaximumBitrateSuccess',
   UpdatePeerId = 'UpdatePeerId',
+  UpdateRecordingMimeType = 'UpdateRecordingMimeType',
   UpdateRemoteAudioLevel = 'UpdateRemoteAudioLevel',
   UpdateRemoteStream = 'UpdateRemoteStream',
   UpdateSendSignalingMessage = 'UpdateSendSignalingMessage',
@@ -108,8 +114,24 @@ export interface OfferReceivedAction extends ActionWithPayload<SDPPayload> {
   type: typeof WebRTCContextActionType.OfferReceived;
 }
 
+interface RecordingDataReceivedAction extends ActionWithPayload<Blob> {
+  type: typeof WebRTCContextActionType.RecordingDataReceived;
+}
+
+interface RecordingStartedAction extends ActionWithPayload<MediaRecorder> {
+  type: typeof WebRTCContextActionType.RecordingStarted;
+}
+
+interface RecordingStoppedAction extends Action {
+  type: typeof WebRTCContextActionType.RecordingStopped;
+}
+
 interface RemovePendingOfferAction extends ActionWithPayload<string> {
   type: typeof WebRTCContextActionType.RemovePendingOffer;
+}
+
+export interface StartRecordingAction extends Action {
+  type: typeof WebRTCContextActionType.StartRecording;
 }
 
 export interface StartScreenShareAction extends Action {
@@ -118,6 +140,10 @@ export interface StartScreenShareAction extends Action {
 
 interface StartScreenShareSuccessAction extends ActionWithPayload<MediaStream> {
   type: typeof WebRTCContextActionType.StartScreenShareSuccess;
+}
+
+export interface StopRecordingAction extends Action {
+  type: typeof WebRTCContextActionType.StopRecording;
 }
 
 export interface StopScreenShareAction extends Action {
@@ -164,6 +190,10 @@ interface UpdatePeerIdAction extends ActionWithPayload<string> {
   type: typeof WebRTCContextActionType.UpdatePeerId;
 }
 
+interface UpdateRecordingMimeTypeAction extends ActionWithPayload<string | undefined> {
+  type: typeof WebRTCContextActionType.UpdateRecordingMimeType;
+}
+
 interface UpdateRemoteAudioLevelAction extends ActionWithPayload<number | undefined> {
   type: typeof WebRTCContextActionType.UpdateRemoteAudioLevel;
 }
@@ -192,7 +222,9 @@ export type AsyncWebRTCContextAction =
   | InitAVStreamAction
   | InitiatePeerConnectionAction
   | OfferReceivedAction
+  | StartRecordingAction
   | StartScreenShareAction
+  | StopRecordingAction
   | StopScreenShareAction
   | UpdateMaximumBitrateAction;
 
@@ -203,6 +235,9 @@ export type WebRTCContextAction =
   | InitAVStreamSuccessAction
   | MuteAudioAction
   | MuteVideoAction
+  | RecordingDataReceivedAction
+  | RecordingStartedAction
+  | RecordingStoppedAction
   | RemovePendingOfferAction
   | StartScreenShareSuccessAction
   | StopScreenShareSuccessAction
@@ -214,6 +249,7 @@ export type WebRTCContextAction =
   | UpdateMaximumBitrateStartedAction
   | UpdateMaximumBitrateSuccessAction
   | UpdatePeerIdAction
+  | UpdateRecordingMimeTypeAction
   | UpdateRemoteAudioLevelAction
   | UpdateRemoteStreamAction
   | UpdateSendSignalingMessageAction

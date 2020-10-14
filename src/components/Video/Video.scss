@@ -2,6 +2,7 @@
 
 .video {
   $self: &;
+  align-self: normal;
 
   &__id-badge.id-badge {
     margin-bottom: 1rem;
