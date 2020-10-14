@@ -37,9 +37,10 @@ You will also see any lint errors in the console.
 ## TODO
 
 - [ ] - Enhance InputGroup
-- [ ] - Implement recordings
+- [x] - Implement local stream recording
+- [ ] - Implement session recording using `canvas`
 - [ ] - Implement handling of multiple incoming connections
 - [ ] - Add logic to disable call related input field when necessary (offer sent but answer hasn't received yet)
 - [ ] - Implement audio level measurement on local peer side using Web Audio
-- [ ] - Disable codec selection while in a call
+- [x] - Disable codec selection while in a call
 - [ ] - Fix pre-call bitrate selection

@@ -11,7 +11,9 @@ import {
   InitAVStreamAction,
   InitiatePeerConnectionAction,
   OfferReceivedAction,
+  StartRecordingAction,
   StartScreenShareAction,
+  StopRecordingAction,
   StopScreenShareAction,
   UpdateMaximumBitrateAction,
   WebRTCContextAction,
@@ -39,11 +41,16 @@ export const initialState: WebRTCContextState = {
   localStream: undefined,
   maximumBitrate: 0,
   maximumBitrateChangeInProgress: false,
+  mediaRecorder: undefined,
   peerId: undefined,
   peers: new Map(),
   pendingOffers: [],
   queryStatsInterval: 2000,
   querySynchronizationSourcesInterval: 200,
+  recordedBlobs: [],
+  recording: undefined,
+  recordingMimeType: undefined,
+  recordInProgress: false,
   remoteStream: undefined,
   screenShare: undefined,
   sendSignalingMessage: () => {},
@@ -238,6 +245,33 @@ const handleOfferReceived: ReducerMiddleware<OfferReceivedAction> = ({ dispatch,
   }
 };
 
+const handleRecordingDataReceived = (state: WebRTCContextState, data: Blob): WebRTCContextState => {
+  if (data.size > 0) {
+    state.recordedBlobs.push(data);
+  }
+
+  return state;
+};
+
+const handleRecordingStarted = (state: WebRTCContextState, mediaRecorder: MediaRecorder): WebRTCContextState => ({
+  ...state,
+  mediaRecorder,
+  recording: undefined,
+  recordInProgress: true,
+});
+
+const handleRecordingStopped = (state: WebRTCContextState): WebRTCContextState => {
+  const recording = new Blob(state.recordedBlobs, { type: 'video/webm' });
+
+  return {
+    ...state,
+    mediaRecorder: undefined,
+    recordedBlobs: [],
+    recording,
+    recordInProgress: false,
+  };
+};
+
 const handleRemovePendingOffer = (state: WebRTCContextState, id: string): WebRTCContextState => {
   const { pendingOffers } = state;
   const indexToRemove = pendingOffers.findIndex((pendingOffer) => pendingOffer.id === id);
@@ -249,6 +283,34 @@ const handleRemovePendingOffer = (state: WebRTCContextState, id: string): WebRTC
       pendingOffers: updatedPendingOffers,
     }),
   };
+};
+
+const handleStartRecording: ReducerMiddleware<StartRecordingAction> = ({ dispatch, getState }) => async () => {
+  const { localStream, recordingMimeType } = getState();
+  const options: MediaRecorderOptions = {
+    mimeType: recordingMimeType,
+  };
+
+  try {
+    const mediaRecorder = new MediaRecorder(localStream!, options);
+    console.log('Created MediaRecorder', mediaRecorder, 'with options', options);
+    mediaRecorder.addEventListener('error', (event) => {
+      console.log('MediaRecorder error', event);
+    });
+    mediaRecorder.addEventListener('dataavailable', ({ data }) => {
+      dispatch({ type: WebRTCContextActionType.RecordingDataReceived, payload: data });
+    });
+    mediaRecorder.addEventListener('stop', () => {
+      dispatch({ type: WebRTCContextActionType.RecordingStopped });
+    });
+    mediaRecorder.addEventListener('start', () => {
+      dispatch({ type: WebRTCContextActionType.RecordingStarted, payload: mediaRecorder });
+    });
+    mediaRecorder.start();
+    console.log('MediaRecorder started', mediaRecorder);
+  } catch (err) {
+    console.error('Exception while creating MediaRecorder:', err);
+  }
 };
 
 const handleStartScreenShare: ReducerMiddleware<StartScreenShareAction> = ({ dispatch, getState }) => async () => {
@@ -268,6 +330,12 @@ const handleStartScreenShareSuccess = (state: WebRTCContextState, stream: MediaS
   ...state,
   screenShare: stream,
 });
+
+const handleStopRecording: ReducerMiddleware<StopRecordingAction> = ({ dispatch, getState }) => async () => {
+  const { mediaRecorder } = getState();
+
+  mediaRecorder?.stop();
+};
 
 const handleStopScreenShare: ReducerMiddleware<StopScreenShareAction> = ({ dispatch, getState }) => async () => {
   const { screenShare } = getState();
@@ -381,6 +449,11 @@ const handleUpdatePeerId = (state: WebRTCContextState, id: string): WebRTCContex
   peerId: id,
 });
 
+const handleUpdateRecordingMimeType = (state: WebRTCContextState, recordingMimeType?: string): WebRTCContextState => ({
+  ...state,
+  recordingMimeType,
+});
+
 const handleUpdateRemoteAudioLevel = (state: WebRTCContextState, audioLevel?: number): WebRTCContextState => ({
   ...state,
   statistics: {
@@ -436,7 +509,9 @@ export const asyncActionHandlers: AsyncActionHandlers<Reducer<WebRTCContextState
   InitAVStream: handleInitAVStream,
   InitiatePeerConnection: handleInitiatePeerConnection,
   OfferReceived: handleOfferReceived,
+  StartRecording: handleStartRecording,
   StartScreenShare: handleStartScreenShare,
+  StopRecording: handleStopRecording,
   StopScreenShare: handleStopScreenShare,
   UpdateMaximumBitrate: handleUpdateMaximumBitrate,
 };
@@ -455,6 +530,12 @@ export const reducer = (state: WebRTCContextState, action: WebRTCContextAction):
       return handleMuteAudio(state);
     case WebRTCContextActionType.MuteVideo:
       return handleMuteVideo(state);
+    case WebRTCContextActionType.RecordingDataReceived:
+      return handleRecordingDataReceived(state, action.payload);
+    case WebRTCContextActionType.RecordingStarted:
+      return handleRecordingStarted(state, action.payload);
+    case WebRTCContextActionType.RecordingStopped:
+      return handleRecordingStopped(state);
     case WebRTCContextActionType.RemovePendingOffer:
       return handleRemovePendingOffer(state, action.payload);
     case WebRTCContextActionType.StartScreenShareSuccess:
@@ -477,6 +558,8 @@ export const reducer = (state: WebRTCContextState, action: WebRTCContextAction):
       return handleUpdateMaximumBitrateSuccess(state, action.payload);
     case WebRTCContextActionType.UpdatePeerId:
       return handleUpdatePeerId(state, action.payload);
+    case WebRTCContextActionType.UpdateRecordingMimeType:
+      return handleUpdateRecordingMimeType(state, action.payload);
     case WebRTCContextActionType.UpdateRemoteAudioLevel:
       return handleUpdateRemoteAudioLevel(state, action.payload);
     case WebRTCContextActionType.UpdateRemoteStream:

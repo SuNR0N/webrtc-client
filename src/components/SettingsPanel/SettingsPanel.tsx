@@ -36,6 +36,7 @@ interface FormFields {
   debug: boolean;
   signalingServerUri: string;
   maximumBitrate: string;
+  recordingMimeType: string;
   videoCodec: RTCRtpCodecCapability | string;
 }
 
@@ -47,6 +48,36 @@ const BITRATE_OPTIONS: MenuOption<number>[] = [
   { label: '250', value: 250 },
   { label: '125', value: 125 },
 ];
+
+const RECORDING_MIME_TYPE_OPTIONS = [
+  'codecs=vp9,opus',
+  'codecs=vp9,vorbis',
+  'codecs=vp8,opus',
+  'codecs=vp8,vorbis',
+  'codecs=h264,opus',
+  'codecs=h264,vorbis',
+  'codecs=av1,opus',
+  'codecs=av1,vorbis',
+  '',
+].reduce(
+  (acc, codec) => {
+    const container = 'video/webm';
+    const codecRegExp = /^codecs=(?<video>\w+),(?<audio>\w+)$/;
+    const codecRegExpExec = codecRegExp.exec(codec);
+    const { video, audio } = codecRegExpExec?.groups || {};
+    const mimeType = [container, codec].filter(Boolean).join(';');
+    const label = ['Container: WebM', video && `Video: ${video.toUpperCase()}`, audio && `Audio: ${audio.toUpperCase()}`]
+      .filter(Boolean)
+      .join(' | ');
+    acc.push({
+      label,
+      value: mimeType,
+      disabled: !MediaRecorder.isTypeSupported(mimeType),
+    });
+    return acc;
+  },
+  [{ label: 'None', value: 'none' }] as MenuOption<string>[]
+);
 
 const VIDEO_CODEC_OPTIONS = ((setCodecPreferencesSupported && RTCRtpSender.getCapabilities('video')?.codecs) || []).reduce(
   (acc, codec) => {
@@ -104,10 +135,11 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
     audioCodec: 'default',
     debug: true,
     maximumBitrate: '0',
+    recordingMimeType: 'none',
     signalingServerUri: '',
     videoCodec: 'default',
   });
-  const { audioCodec, debug, maximumBitrate, videoCodec } = fieldValues;
+  const { audioCodec, debug, maximumBitrate, recordingMimeType, videoCodec } = fieldValues;
 
   const handleConnect = () => {
     dispatchSignalingAction({ type: SignalingContextActionType.Connect, payload: fieldValues.signalingServerUri });
@@ -169,6 +201,13 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
       payload: typeof videoCodec === 'string' ? undefined : videoCodec,
     });
   }, [dispatchWebRTCAction, videoCodec]);
+
+  useEffect(() => {
+    dispatchWebRTCAction({
+      type: WebRTCContextActionType.UpdateRecordingMimeType,
+      payload: recordingMimeType === 'none' ? undefined : recordingMimeType,
+    });
+  }, [dispatchWebRTCAction, recordingMimeType]);
 
   return (
     <Accordion className={cn('settings-panel', className)}>
@@ -257,6 +296,24 @@ export const SettingsPanel: FC<Props> = ({ className }) => {
               <Select label="Audio Codec" id="inputAudioCodec" name="audioCodec" value={fieldValues.audioCodec} onChange={handleSelect}>
                 {AUDIO_CODEC_OPTIONS.map(({ label, value }) => (
                   <MenuItem key={JSON.stringify(value)} value={value as any}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth variant="outlined">
+              <InputLabel id="inputRecordingType">Recording Mime Type</InputLabel>
+              <Select
+                label="Recording Mime Type"
+                id="inputRecordingMimeType"
+                name="recordingMimeType"
+                value={fieldValues.recordingMimeType}
+                onChange={handleSelect}
+              >
+                {RECORDING_MIME_TYPE_OPTIONS.map(({ disabled, label, value }) => (
+                  <MenuItem key={value} value={value} disabled={disabled}>
                     {label}
                   </MenuItem>
                 ))}
